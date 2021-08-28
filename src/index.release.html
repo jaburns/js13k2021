@@ -1,0 +1,18 @@
+<meta charset="utf-8">
+<canvas id=C0 width=s_fullWidth height=s_fullHeight></canvas>
+<canvas id=C1 width=s_renderWidth height=s_renderHeight></canvas>
+
+<style onload="g=C0.getContext`webgl`;c=C1.getContext`2d`;__CODE__">
+
+html,body,canvas{
+    background:#000;
+    margin:0
+}
+#C1{
+    display:none
+}
+canvas{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%)
