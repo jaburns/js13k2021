@@ -25,32 +25,27 @@ const replaceSimple = (x, y, z) =>
     return x.substr( 0, idx ) + z + x.substr( idx + y.length );
 };
 
-const hashWebglIdentifiers = ( js, and2dContext ) =>
+const hashIdentifiers = js =>
 {
     let result = new ShapeShifter().preprocess(js, {
         hashWebGLContext: true,
         contextVariableName: 'g',
         contextType: 1,
         reassignVars: true,
-        varsNotReassigned: ['A','b','g','c'],
+        varsNotReassigned: ['C0','C1','g','c'],
         useES6: true,
     })[2].contents;
 
     result = result.replace('for(', 'for(let ');
 
-    if( and2dContext )
-    {
-        result = new ShapeShifter().preprocess(result, {
-            hash2DContext: true,
-            contextVariableName: 'c',
-            contextType: 0,
-            reassignVars: true,
-            varsNotReassigned: ['A','b','g','c'],
-            useES6: true,
-        })[2].contents;
-
-        result = result.replace('for(', 'for(let ');
-    }
+    result = new ShapeShifter().preprocess(result, {
+        hash2DContext: true,
+        contextVariableName: 'c',
+        contextType: 0,
+        reassignVars: true,
+        varsNotReassigned: ['C0','C1','g','c'],
+        useES6: true,
+    })[2].contents;
 
     return result;
 };
@@ -129,7 +124,7 @@ const main = () =>
 
     let x = fs.readFileSync('build/bundle.js', 'utf8');
     x = minifyShaderExternalNames( x );
-    if( !DEBUG ) x = hashWebglIdentifiers( x, true );
+    if( !DEBUG ) x = hashIdentifiers( x, true );
     x = wrapWithHTML( x );
     //x = applyStateMap( x );
     fs.writeFileSync( 'build/index.html', x );
