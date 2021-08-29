@@ -56,7 +56,8 @@ let fullTime = 0;
 let prevNow = performance.now();
 
 let tick = () => {
-    c.clearRect(0,0,WIDTH,HEIGHT);
+    c.fillStyle = '#000';
+    c.fillRect(0,0,WIDTH,HEIGHT);
     renderSprite(Math.min(x, 17));
 
     if( ++x > 30 )

@@ -49,7 +49,7 @@ let animData: any = [
 
 let spriteRenderers = [
     ([ _, radius, x, y ]:any) => {
-        c.fillStyle = '#fff';
+        c.fillStyle = '#f00';
         c.beginPath();
         c.arc(x, y, radius, 0, 2*Math.PI);
         c.fill();
@@ -62,7 +62,7 @@ let spriteRenderers = [
         c.stroke();
     },
     ([ _, fill, w, h, x, y ]:any) => {
-        c.fillStyle = fill ? '#fff' : '#000';
+        c.fillStyle = fill ? '#f00' : '#000';
         c.fillRect(x, y, w, h);
     },
 ];
@@ -74,7 +74,7 @@ let lerpFrame = (a: any, b: any, t: number): any =>
         : a+t*(b-a);
 
 export let renderSprite = (frameNum: number): void => {
-    c.strokeStyle = '#fff';
+    c.strokeStyle = '#f00';
     c.lineCap = 'round';
 
     for(let layerIdx = 0; layerIdx < animData.length; ++layerIdx) {
