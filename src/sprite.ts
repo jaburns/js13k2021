@@ -73,7 +73,29 @@ let lerpFrame = (a: any, b: any, t: number): any =>
         ? a.map((x,i)=>lerpFrame(x,b[i],t))
         : a+t*(b-a);
 
-export let renderSprite = (frameNum: number): void => {
+export const enum SpriteState {
+    Rolling = 0,
+    Jumping = 1,
+    Stomping = 2,
+};
+
+let s_spriteFrameNum = 0;
+
+export let tickSprite = (state: SpriteState): void => {
+    if( state === SpriteState.Rolling ) {
+        s_spriteFrameNum = 0;
+    }
+    if( state === SpriteState.Jumping ) {
+        if( (s_spriteFrameNum += 1) > 12 )
+            s_spriteFrameNum -= 4;
+    }
+    if( state === SpriteState.Stomping ) {
+        if( (s_spriteFrameNum += 1) > 17 )
+            s_spriteFrameNum = 17;
+    }
+};
+
+export let renderSprite = (): void => {
     c.strokeStyle = '#f00';
     c.lineCap = 'round';
 
@@ -84,12 +106,12 @@ export let renderSprite = (frameNum: number): void => {
         let nextFrameIdx = 0;
         if( layer.length > 1 ) {
             nextFrameIdx = 1;
-            while( nextFrameIdx < layer.length - 1 && layer[nextFrameIdx][0] <= frameNum ) nextFrameIdx++;
+            while( nextFrameIdx < layer.length - 1 && layer[nextFrameIdx][0] <= s_spriteFrameNum ) nextFrameIdx++;
             thisFrameIdx = nextFrameIdx - 1;
         }
         let a = layer[thisFrameIdx];
         let b = layer[nextFrameIdx];
-        let lerpT = thisFrameIdx == nextFrameIdx ? 0 : (frameNum - a[0]) / (b[0] - a[0]);
+        let lerpT = thisFrameIdx == nextFrameIdx ? 0 : (s_spriteFrameNum - a[0]) / (b[0] - a[0]);
         let frame = a[1] && b[1] ? lerpFrame(a, b, lerpT) : a;
 
         if(!frame[1]) continue;
