@@ -1,6 +1,9 @@
-import { WIDTH, HEIGHT } from './globals';
+import { WIDTH, HEIGHT, Vec2 } from './globals';
 
 declare const c: CanvasRenderingContext2D;
+
+const SPRITE_SCALE = 0.075;
+const BASE_SCALE = 21;
 
 let animData: any = [
     [
@@ -68,7 +71,7 @@ let spriteRenderers = [
 ];
 
 let lerpFrame = (a: any, b: any, t: number): any =>
-    typeof a == 'boolean' ? a :
+    !!a===a ? a :
     Array.isArray(a)
         ? a.map((x,i)=>lerpFrame(x,b[i],t))
         : a+t*(b-a);
@@ -95,9 +98,11 @@ export let tickSprite = (state: SpriteState): void => {
     }
 };
 
-export let renderSprite = (): void => {
+export let renderSprite = (cameraZoom: number, cameraPos: Vec2): void => {
     c.strokeStyle = '#f00';
     c.lineCap = 'round';
+
+    cameraZoom *= SPRITE_SCALE;
 
     for(let layerIdx = 0; layerIdx < animData.length; ++layerIdx) {
         let layer = animData[layerIdx];
@@ -114,11 +119,33 @@ export let renderSprite = (): void => {
         let lerpT = thisFrameIdx == nextFrameIdx ? 0 : (s_spriteFrameNum - a[0]) / (b[0] - a[0]);
         let frame = a[1] && b[1] ? lerpFrame(a, b, lerpT) : a;
 
-        if(!frame[1]) continue;
-        c.save();
-        c.translate(frame[2] + WIDTH/2, frame[3] + HEIGHT/2);
-        c.rotate(frame[4]);
-        frame[5].forEach((item:any) => spriteRenderers[item[0]](item));
-        c.restore();
+        if(frame[1]) {
+            c.save();
+            c.scale(cameraZoom, cameraZoom);
+            c.translate(
+                frame[2] + WIDTH/2/cameraZoom - BASE_SCALE*cameraPos[0]/cameraZoom, 
+                frame[3] + HEIGHT/2/cameraZoom - BASE_SCALE*cameraPos[1]/cameraZoom
+            );
+            c.rotate(frame[4]);
+            frame[5].forEach((item:any) => spriteRenderers[item[0]](item));
+            c.restore();
+        }
     }
+
+    // Draw world space unit circle
+    //{
+    //    if( Math.random() > 0.5 ) return;
+    //    c.save();
+    //    cameraZoom *= BASE_SCALE / SPRITE_SCALE
+    //    c.scale(cameraZoom, cameraZoom);
+    //    c.translate(
+    //        WIDTH/2/cameraZoom - cameraPos[0], 
+    //        HEIGHT/2/cameraZoom - cameraPos[1]
+    //    );
+    //    c.beginPath();
+    //    c.fillStyle='#f00';
+    //    c.arc(0, 0, 1, 0, 2*Math.PI);
+    //    c.fill();
+    //    c.restore();
+    //}
 };

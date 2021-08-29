@@ -54,7 +54,7 @@ export let initRender = (): void => {
 export let renderState = (time: number, state: GameState): void => {
     c.fillStyle = '#000';
     c.fillRect(0,0,WIDTH,HEIGHT);
-    renderSprite();
+    renderSprite(state.cameraZoom, state.cameraPos);
 
     g.useProgram(ss);
 
@@ -62,7 +62,7 @@ export let renderState = (time: number, state: GameState): void => {
     g.bindTexture(gl_TEXTURE_2D, canTex);
     g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, gl_RGBA, gl_UNSIGNED_BYTE, C1);
     g.uniform1i(g.getUniformLocation(ss, 'T'), 0);
-    g.uniform1f(g.getUniformLocation(ss, 't'), time);
+    g.uniform4f(g.getUniformLocation(ss, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, time);
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     let posLoc = g.getAttribLocation( ss, 'a_position' );
