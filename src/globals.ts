@@ -12,6 +12,7 @@ export const enum KeyCode {
 export const enum Bool { False, True }
 export const False = Bool.False;
 export const True = Bool.True;
+
 export type Vec2 = [number, number];
 
 export let globalKeysDown: {[keyCode: number]: Bool} = {};

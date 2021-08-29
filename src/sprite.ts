@@ -1,4 +1,5 @@
 import { WIDTH, HEIGHT, Vec2 } from './globals';
+import {GameState} from './state';
 
 declare const c: CanvasRenderingContext2D;
 
@@ -98,11 +99,11 @@ export let tickSprite = (state: SpriteState): void => {
     }
 };
 
-export let renderSprite = (cameraZoom: number, cameraPos: Vec2): void => {
+export let renderSprite = (state: GameState): void => {
     c.strokeStyle = '#f00';
     c.lineCap = 'round';
 
-    cameraZoom *= SPRITE_SCALE;
+    let cameraZoom = state.cameraZoom * SPRITE_SCALE;
 
     for(let layerIdx = 0; layerIdx < animData.length; ++layerIdx) {
         let layer = animData[layerIdx];
@@ -123,9 +124,10 @@ export let renderSprite = (cameraZoom: number, cameraPos: Vec2): void => {
             c.save();
             c.scale(cameraZoom, cameraZoom);
             c.translate(
-                frame[2] + WIDTH/2/cameraZoom - BASE_SCALE*cameraPos[0]/cameraZoom, 
-                frame[3] + HEIGHT/2/cameraZoom - BASE_SCALE*cameraPos[1]/cameraZoom
+                state.spriteScaleX*frame[2] + WIDTH/2/cameraZoom - BASE_SCALE*(state.cameraPos[0] - state.playerPos[0])/cameraZoom,
+                frame[3] + HEIGHT/2/cameraZoom - BASE_SCALE*(state.cameraPos[1] - state.playerPos[1])/cameraZoom
             );
+            c.scale(state.spriteScaleX,1);
             c.rotate(frame[4]);
             frame[5].forEach((item:any) => spriteRenderers[item[0]](item));
             c.restore();

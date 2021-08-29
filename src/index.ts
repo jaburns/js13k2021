@@ -4,7 +4,6 @@ import {initRender, renderState} from "./render";
 import {tickSprite} from './sprite';
 
 let accTime = 0;
-let fullTime = 0;
 let prevNow = performance.now();
 
 let curState = newGameState();
@@ -22,7 +21,6 @@ let frame = () => {
     let newNow = performance.now();
     let dt = Math.min( newNow - prevNow, 1000 );
     accTime += dt;
-    fullTime += dt/500;
     prevNow = newNow;
 
     while( accTime > TICK_MS ) {
@@ -30,7 +28,7 @@ let frame = () => {
         tick();
     }
 
-    renderState(fullTime, lerpGameState(prevState, curState, accTime / TICK_MS));
+    renderState(lerpGameState(prevState, curState, accTime / TICK_MS));
 };
 
 initRender();
