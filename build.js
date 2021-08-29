@@ -47,6 +47,8 @@ const hashIdentifiers = js =>
         useES6: true,
     })[2].contents;
 
+    result = result.replace('for(', 'for(let ');
+
     return result;
 };
 
@@ -125,8 +127,8 @@ const main = () =>
     let x = fs.readFileSync('build/bundle.js', 'utf8');
     x = minifyShaderExternalNames( x );
     if( !DEBUG ) x = hashIdentifiers( x, true );
+    //x = x.replace(/const /g, 'let ');
     x = wrapWithHTML( x );
-    //x = applyStateMap( x );
     fs.writeFileSync( 'build/index.html', x );
 
     if( !DEBUG )

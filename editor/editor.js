@@ -220,7 +220,7 @@ const renderData = data => {
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
-    ctx.drawImage(imgref, -4, 0);
+    //ctx.drawImage(imgref, -4, 0);
 
     if(!ANIM_PREVIEW_MODE) ctx.globalAlpha = 0.8;
 
