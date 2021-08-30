@@ -3,10 +3,10 @@ export const HEIGHT = 768;
 export const TICK_MS = 33;
 
 export const enum KeyCode {
-    Left = 37,
-    Up = 38,
-    Right = 39,
-    Down = 40,
+    Left = 'A',
+    Up = 'W',
+    Right = 'D',
+    Down = 'S',
 }
 
 export const enum Bool { False, True }
@@ -15,9 +15,9 @@ export const True = Bool.True;
 
 export type Vec2 = [number, number];
 
-export let globalKeysDown: {[keyCode: number]: Bool} = {};
-document.onkeydown = e => globalKeysDown[e.which] = True;
-document.onkeyup = e => globalKeysDown[e.which] = False;
+export let globalKeysDown: {[keyCode: string]: Bool} = {};
+document.onkeydown = e => globalKeysDown[e.code[3]] = True;
+document.onkeyup = e => globalKeysDown[e.code[3]] = False;
 
 export let lerp = (a: number, b: number, t: number): number =>
     a + t*(b-a);
