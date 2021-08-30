@@ -42,7 +42,7 @@ float map(vec2 p)
     p *= 0.1;
     p.y *= -1.0;
 
-    return min(
+    return -min(
         // Cliff at the start of the level
         p.x - .7*p.y - 3., 
 
@@ -57,13 +57,22 @@ float map(vec2 p)
     ) / 0.1;
 }
 
+// Returns the world normal vector at some world space point p
+vec2 getNorm(vec2 p)
+{
+    vec2 eps = vec2(1e-4, 0);
+    return normalize(vec2(
+        map(p - eps.xy) - map(p + eps.xy),
+        map(p - eps.yx) - map(p + eps.yx)));
+}
+
 // ==================================================================================================
 
 
 
 void main() {
     if( t.z == 0.0 ) {
-        gl_FragColor = vec4(map(t.xy));
+        gl_FragColor = vec4(-getNorm(t.xy), map(t.xy), 0.0);
         return;
     }
 
@@ -79,10 +88,11 @@ void main() {
     vec3 colA = 0.5 + 0.5*cos(time+uv.xyx+vec3(0,2,4));
     vec3 colB = 1.0 - colA; // 0.5 + 0.5*cos(time+3.0+uv.xyx+vec3(0,2,4));
 
-    if( map(worldPos) > 0.0 ){
-    //if( worldPos.y > 10.0 ) {
+    float mapDist = map(worldPos);
+
+    if( mapDist < 0.0 ){
         samp = 1.0;
     }
 
-    gl_FragColor = vec4(mix(colA,colB,samp),1.0);
+    gl_FragColor = vec4(mix(colA,colB,samp) * fract(abs(mapDist)),1.0);
 }

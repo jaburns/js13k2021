@@ -1,4 +1,4 @@
-import {Bool, False, globalKeysDown, KeyCode, lerp, lerpVec2, True, Vec2} from "./globals";
+import {v2Add, Bool, False, globalKeysDown, KeyCode, lerp, v2Lerp, True, Vec2, v2Dot} from "./globals";
 import {readWorldSample, requestWorldSample, worldSampleResult} from "./render";
 import {SpriteState} from "./sprite";
 
@@ -27,12 +27,12 @@ export let newGameState = (): GameState => ({
 export let lerpGameState = (a: GameState, b: GameState, t: number): GameState => ({
     tick: lerp(a.tick, b.tick, t),
     cameraZoom: lerp(a.cameraZoom, b.cameraZoom, t),
-    cameraPos: lerpVec2(a.cameraPos, b.cameraPos, t),
+    cameraPos: v2Lerp(a.cameraPos, b.cameraPos, t),
     spriteState: b.spriteState,
     spriteScaleX: b.spriteScaleX,
 
-    playerPos: lerpVec2(a.playerPos, b.playerPos, t),
-    playerVel: lerpVec2(a.playerVel, b.playerVel, t),
+    playerPos: v2Lerp(a.playerPos, b.playerPos, t),
+    playerVel: v2Lerp(a.playerVel, b.playerVel, t),
 });
 
 export let tickGameState = (oldState: GameState): GameState => {
@@ -59,21 +59,24 @@ export let tickGameState = (oldState: GameState): GameState => {
 
     newState.playerVel[1] += 0.1;
 
+    newState.playerPos = v2Add(1, newState.playerPos, newState.playerVel);
     newState.playerPos[0] += newState.playerVel[0];
     newState.playerPos[1] += newState.playerVel[1];
 
     requestWorldSample(newState.playerPos);
     readWorldSample();
-    console.log(worldSampleResult[0]);
 
-    if( worldSampleResult[0] > -1.0 ) {
-        newState.playerVel[1] = 0;
+    if( worldSampleResult[2] < 1.0 ) {
+        let norm: Vec2 = [worldSampleResult[0], worldSampleResult[1]];
+        newState.playerVel = v2Add(v2Dot(newState.playerVel, norm), newState.playerVel, newState.playerVel);
+        newState.playerPos = v2Add(1.0 - worldSampleResult[2], newState.playerPos, norm);
         newState.spriteState = SpriteState.Rolling;
+
+        console.log(worldSampleResult[0], worldSampleResult[1]);
     }
 
     newState.cameraPos[0] += (newState.playerPos[0] - newState.cameraPos[0]) * 0.5;
     newState.cameraPos[1] += (newState.playerPos[1] - newState.cameraPos[1]) * 0.5;
-
 
     return newState;
 };

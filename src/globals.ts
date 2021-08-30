@@ -9,18 +9,31 @@ export const enum KeyCode {
     Down = 'S',
 }
 
+export let globalKeysDown: {[keyCode: string]: Bool} = {};
+document.onkeydown = e => globalKeysDown[e.code[3]] = True;
+document.onkeyup = e => globalKeysDown[e.code[3]] = False;
+
 export const enum Bool { False, True }
 export const False = Bool.False;
 export const True = Bool.True;
 
 export type Vec2 = [number, number];
 
-export let globalKeysDown: {[keyCode: string]: Bool} = {};
-document.onkeydown = e => globalKeysDown[e.code[3]] = True;
-document.onkeyup = e => globalKeysDown[e.code[3]] = False;
-
 export let lerp = (a: number, b: number, t: number): number =>
     a + t*(b-a);
 
-export let lerpVec2 = (a: Vec2, b: Vec2, t: number): Vec2 => 
+export let v2Lerp = (a: Vec2, b: Vec2, t: number): Vec2 => 
     a.map((x,i)=>lerp(x,b[i],t)) as Vec2;
+
+export let v2Add = (s: number, a: Vec2, b: Vec2): Vec2 =>
+    a.map((x,i)=>x+s*b[i]) as Vec2;
+
+export let v2Sub = (a: Vec2, b: Vec2): Vec2 =>
+    a.map((x,i)=>x-b[i]) as Vec2;
+
+export let v2Dot = (a: Vec2, b: Vec2): number =>
+    a[0]*b[0] + a[1]*b[1];
+
+export let v2LenSqr = (a: Vec2): number => 
+    v2Dot(a,a);
+
