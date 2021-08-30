@@ -25,7 +25,7 @@ export let lerp = (a: number, b: number, t: number): number =>
 export let v2Lerp = (a: Vec2, b: Vec2, t: number): Vec2 => 
     a.map((x,i)=>lerp(x,b[i],t)) as Vec2;
 
-export let v2Add = (s: number, a: Vec2, b: Vec2): Vec2 =>
+export let v2Add = (a: Vec2, b: Vec2, s: number): Vec2 =>
     a.map((x,i)=>x+s*b[i]) as Vec2;
 
 export let v2Sub = (a: Vec2, b: Vec2): Vec2 =>
@@ -33,6 +33,13 @@ export let v2Sub = (a: Vec2, b: Vec2): Vec2 =>
 
 export let v2Dot = (a: Vec2, b: Vec2): number =>
     a[0]*b[0] + a[1]*b[1];
+
+export let v2Reflect = (a: Vec2, norm: Vec2, normFactor: number, tanFactor: number): Vec2 => {
+    let tan: Vec2 = [norm[1], -norm[0]];
+    let normComp = -v2Dot(a, norm) * normFactor;
+    let tanComp = v2Dot(a, tan) * tanFactor;
+    return v2Add([normComp*norm[0],normComp*norm[1]], tan, tanComp);
+};
 
 export let v2LenSqr = (a: Vec2): number => 
     v2Dot(a,a);

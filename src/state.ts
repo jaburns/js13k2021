@@ -1,4 +1,4 @@
-import {v2Add, Bool, False, globalKeysDown, KeyCode, lerp, v2Lerp, True, Vec2, v2Dot} from "./globals";
+import {v2Add, Bool, False, globalKeysDown, KeyCode, lerp, v2Lerp, True, Vec2, v2Dot, v2Reflect} from "./globals";
 import {readWorldSample, requestWorldSample, worldSampleResult} from "./render";
 import {SpriteState} from "./sprite";
 
@@ -59,7 +59,7 @@ export let tickGameState = (oldState: GameState): GameState => {
 
     newState.playerVel[1] += 0.1;
 
-    newState.playerPos = v2Add(1, newState.playerPos, newState.playerVel);
+    newState.playerPos = v2Add(newState.playerPos, newState.playerVel, 1);
     newState.playerPos[0] += newState.playerVel[0];
     newState.playerPos[1] += newState.playerVel[1];
 
@@ -68,11 +68,9 @@ export let tickGameState = (oldState: GameState): GameState => {
 
     if( worldSampleResult[2] < 1.0 ) {
         let norm: Vec2 = [worldSampleResult[0], worldSampleResult[1]];
-        newState.playerVel = v2Add(v2Dot(newState.playerVel, norm), newState.playerVel, newState.playerVel);
-        newState.playerPos = v2Add(1.0 - worldSampleResult[2], newState.playerPos, norm);
+        newState.playerVel = v2Reflect(newState.playerVel, norm, 0, 1);
+        newState.playerPos = v2Add(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
         newState.spriteState = SpriteState.Rolling;
-
-        console.log(worldSampleResult[0], worldSampleResult[1]);
     }
 
     newState.cameraPos[0] += (newState.playerPos[0] - newState.cameraPos[0]) * 0.5;
