@@ -1,5 +1,3 @@
-export const WIDTH = 1024;
-export const HEIGHT = 768;
 export const TICK_MS = 33;
 
 export const enum KeyCode {
@@ -10,12 +8,10 @@ export const enum KeyCode {
 }
 
 export let globalKeysDown: {[keyCode: string]: Bool} = {};
-document.onkeydown = e => globalKeysDown[e.code[3]] = True;
-document.onkeyup = e => globalKeysDown[e.code[3]] = False;
+document.onkeydown = e => globalKeysDown[e.code[3]] = Bool.True;
+document.onkeyup = e => globalKeysDown[e.code[3]] = Bool.False;
 
 export const enum Bool { False, True }
-export const False = Bool.False;
-export const True = Bool.True;
 
 export let radsLerp = (a: number, b: number, t: number): number =>
     a + t*(b-a);

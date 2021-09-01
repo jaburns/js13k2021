@@ -1,4 +1,4 @@
-import {v2Add, Bool, False, globalKeysDown, KeyCode, lerp, v2Lerp, True, Vec2, v2Dot, v2Reflect, radsLerp} from "./globals";
+import {v2Add, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp} from "./globals";
 import {readWorldSample, requestWorldSample, worldSampleResult} from "./render";
 import {SpriteState} from "./sprite";
 
@@ -25,7 +25,7 @@ export let newGameState = (): GameState => ({
     playerPos: [100, 0],
     playerVel: [0, 0],
     playerRot: 0,
-    playerCanJump: False,
+    playerCanJump: Bool.False,
 });
 
 export let lerpGameState = (a: GameState, b: GameState, t: number): GameState => ({
@@ -54,7 +54,7 @@ export let tickGameState = (oldState: GameState): GameState => {
     if( globalKeysDown[KeyCode.Up] && newState.playerCanJump ) {
         newState.playerVel[1] = -0.5;
         newState.spriteState = SpriteState.Jumping;
-        newState.playerCanJump = False;
+        newState.playerCanJump = Bool.False;
     }
 
     if( globalKeysDown[KeyCode.Left] ) {
@@ -84,7 +84,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         newState.playerPos = v2Add(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
         newState.spriteState = SpriteState.Rolling;
         newState.playerRot = Math.atan2(norm[0], -norm[1]);
-        newState.playerCanJump = True;
+        newState.playerCanJump = Bool.True;
     } else {
         newState.playerRot = radsLerp(newState.playerRot, 0, 0.25);
     }

@@ -5,11 +5,10 @@ const path = require('path');
 const _ = require('lodash');
 const ShapeShifter = require('regpack/shapeShifter');
 const advzipPath = require('advzip-bin');
+const constantsJson = require('./src/constants.json');
 
 const DEBUG = process.argv.indexOf('--debug') >= 0;
 const MONO_RUN = process.platform === 'win32' ? '' : 'mono ';
-
-const g_shaderExternalNameMap = {};
 
 const run = cmd =>
 {
@@ -25,46 +24,40 @@ const replaceSimple = (x, y, z) =>
     return x.substr( 0, idx ) + z + x.substr( idx + y.length );
 };
 
+const applyConstants = code =>
+{
+    for( let k in constantsJson )
+        code = code.replace( new RegExp( k, 'g' ), constantsJson[k] );
+    return code;
+}
+
 const hashIdentifiers = js =>
 {
-    let result = new ShapeShifter().preprocess(js, {
+    const varsNotReassigned = ['C0','C1','g','c'];
+
+    js = new ShapeShifter().preprocess(js, {
         hashWebGLContext: true,
         contextVariableName: 'g',
         contextType: 1,
         reassignVars: true,
-        varsNotReassigned: ['C0','C1','g','c'],
+        varsNotReassigned,
         useES6: true,
     })[2].contents;
 
-    result = result.replace('for(', 'for(let ');
+    js = js.replace('for(', 'for(let ');
 
-    result = new ShapeShifter().preprocess(result, {
+    js = new ShapeShifter().preprocess(js, {
         hash2DContext: true,
         contextVariableName: 'c',
         contextType: 0,
         reassignVars: true,
-        varsNotReassigned: ['C0','C1','g','c'],
+        varsNotReassigned,
         useES6: true,
     })[2].contents;
 
-    result = result.replace('for(', 'for(let ');
+    js = js.replace('for(', 'for(let ');
 
-    return result;
-};
-
-const buildShaderExternalNameMap = shaderCode =>
-{
-    let i = 0;
-    _.uniq( shaderCode.match(/[vau]_[a-zA-Z0-9]+/g) )
-        .forEach( x => g_shaderExternalNameMap[x] = `x${i++}` );
-};
-
-const minifyShaderExternalNames = code =>
-{
-    for( let k in g_shaderExternalNameMap )
-        code = code.replace( new RegExp( k, 'g' ), g_shaderExternalNameMap[k] );
-
-    return code;
+    return js;
 };
 
 const generateShaderFile = () =>
@@ -75,7 +68,7 @@ const generateShaderFile = () =>
         if( x.endsWith('.frag') || x.endsWith('.vert'))
         {
             const code = fs.readFileSync( path.resolve( 'src', x ), 'utf8' );
-            fs.writeFileSync( path.resolve( 'shadersTmp', x ), code );
+            fs.writeFileSync( path.resolve( 'shadersTmp', x ), applyConstants( code ));
         }
     });
 
@@ -83,8 +76,6 @@ const generateShaderFile = () =>
 
     run( MONO_RUN + 'tools/shader_minifier.exe --no-renaming-list '+noRenames.join(',')+' --format js -o build/shaders.js --preserve-externals '+(DEBUG ? '--preserve-all-globals' : '')+' shadersTmp/*' );
     let shaderCode = fs.readFileSync( 'build/shaders.js', 'utf8' );
-    buildShaderExternalNameMap( shaderCode );
-    shaderCode = minifyShaderExternalNames( shaderCode );
 
     shaderCode = shaderCode
         .split('\n')
@@ -125,10 +116,13 @@ const main = () =>
     run( 'rollup -c' + ( DEBUG ? ' --config-debug' : '' ));
 
     let x = fs.readFileSync('build/bundle.js', 'utf8');
-    x = minifyShaderExternalNames( x );
     if( !DEBUG ) x = hashIdentifiers( x, true );
-    //x = x.replace(/const /g, 'let ');
+
+    if( !DEBUG && x.indexOf('const ') > 0 )
+        console.warn('\n    WARNING: "const" appears in packed JS\n');
+
     x = wrapWithHTML( x );
+    x = applyConstants( x );
     fs.writeFileSync( 'build/index.html', x );
 
     if( !DEBUG )
