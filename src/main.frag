@@ -94,5 +94,5 @@ void main() {
         samp = 1.0;
     }
 
-    gl_FragColor = vec4(mix(colA,colB,samp) * fract(abs(mapDist)),1.0);
+    gl_FragColor = vec4(mix(colA,colB,samp) /* fract(abs(mapDist)) */, 1.0);
 }

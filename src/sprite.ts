@@ -94,6 +94,8 @@ export let tickSprite = (state: SpriteState): void => {
             s_spriteFrameNum -= 4;
     }
     if( state === SpriteState.Stomping ) {
+        if( s_spriteFrameNum < 12 )
+            s_spriteFrameNum = 12;
         if( (s_spriteFrameNum += 1) > 17 )
             s_spriteFrameNum = 17;
     }
@@ -124,8 +126,13 @@ export let renderSprite = (state: GameState): void => {
             c.save();
             c.scale(cameraZoom, cameraZoom);
             c.translate(
-                state.spriteScaleX*frame[2] + WIDTH/2/cameraZoom - BASE_SCALE*(state.cameraPos[0] - state.playerPos[0])/cameraZoom,
-                frame[3] + HEIGHT/2/cameraZoom - BASE_SCALE*(state.cameraPos[1] - state.playerPos[1])/cameraZoom
+                WIDTH/2/cameraZoom - BASE_SCALE*(state.cameraPos[0] - state.playerPos[0])/cameraZoom,
+                HEIGHT/2/cameraZoom - BASE_SCALE*(state.cameraPos[1] - state.playerPos[1])/cameraZoom
+            );
+            c.rotate(state.playerRot);
+            c.translate(
+                state.spriteScaleX*frame[2],
+                frame[3]
             );
             c.scale(state.spriteScaleX,1);
             c.rotate(frame[4]);
@@ -141,8 +148,8 @@ export let renderSprite = (state: GameState): void => {
     //    cameraZoom *= BASE_SCALE / SPRITE_SCALE
     //    c.scale(cameraZoom, cameraZoom);
     //    c.translate(
-    //        WIDTH/2/cameraZoom - cameraPos[0], 
-    //        HEIGHT/2/cameraZoom - cameraPos[1]
+    //        WIDTH/2/cameraZoom - state.cameraPos[0], 
+    //        HEIGHT/2/cameraZoom - state.cameraPos[1]
     //    );
     //    c.beginPath();
     //    c.fillStyle='#f00';

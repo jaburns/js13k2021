@@ -17,6 +17,9 @@ export const enum Bool { False, True }
 export const False = Bool.False;
 export const True = Bool.True;
 
+export let radsLerp = (a: number, b: number, t: number): number =>
+    a + t*(b-a);
+
 export type Vec2 = [number, number];
 
 export let lerp = (a: number, b: number, t: number): number =>

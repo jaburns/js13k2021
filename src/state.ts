@@ -1,4 +1,4 @@
-import {v2Add, Bool, False, globalKeysDown, KeyCode, lerp, v2Lerp, True, Vec2, v2Dot, v2Reflect} from "./globals";
+import {v2Add, Bool, False, globalKeysDown, KeyCode, lerp, v2Lerp, True, Vec2, v2Dot, v2Reflect, radsLerp} from "./globals";
 import {readWorldSample, requestWorldSample, worldSampleResult} from "./render";
 import {SpriteState} from "./sprite";
 
@@ -11,17 +11,21 @@ export type GameState = {
 
     playerPos: Vec2,
     playerVel: Vec2,
+    playerRot: number,
+    playerCanJump: Bool,
 };
 
 export let newGameState = (): GameState => ({
     tick: 0,
-    cameraZoom: 1,
+    cameraZoom: 1.5,
     cameraPos: [0, 0],
     spriteState: SpriteState.Rolling,
     spriteScaleX: 1,
 
     playerPos: [100, 0],
     playerVel: [0, 0],
+    playerRot: 0,
+    playerCanJump: False,
 });
 
 export let lerpGameState = (a: GameState, b: GameState, t: number): GameState => ({
@@ -33,6 +37,8 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
 
     playerPos: v2Lerp(a.playerPos, b.playerPos, t),
     playerVel: v2Lerp(a.playerVel, b.playerVel, t),
+    playerRot: radsLerp(a.playerRot, b.playerRot, t),
+    playerCanJump: b.playerCanJump,
 });
 
 export let tickGameState = (oldState: GameState): GameState => {
@@ -40,9 +46,15 @@ export let tickGameState = (oldState: GameState): GameState => {
 
     newState.tick++;
 
-    if( globalKeysDown[KeyCode.Up] ) {
-        newState.playerVel[1] = -1;
+    if( globalKeysDown[KeyCode.Down] && !newState.playerCanJump ) {
+        newState.spriteState = SpriteState.Stomping;
+        newState.playerVel[1] = 0.5;
+    }
+
+    if( globalKeysDown[KeyCode.Up] && newState.playerCanJump ) {
+        newState.playerVel[1] = -0.5;
         newState.spriteState = SpriteState.Jumping;
+        newState.playerCanJump = False;
     }
 
     if( globalKeysDown[KeyCode.Left] ) {
@@ -57,7 +69,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         newState.playerVel[0] *= 0.95;
     }
 
-    newState.playerVel[1] += 0.1;
+    newState.playerVel[1] += 0.03;
 
     newState.playerPos = v2Add(newState.playerPos, newState.playerVel, 1);
     newState.playerPos[0] += newState.playerVel[0];
@@ -71,6 +83,10 @@ export let tickGameState = (oldState: GameState): GameState => {
         newState.playerVel = v2Reflect(newState.playerVel, norm, 0, 1);
         newState.playerPos = v2Add(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
         newState.spriteState = SpriteState.Rolling;
+        newState.playerRot = Math.atan2(norm[0], -norm[1]);
+        newState.playerCanJump = True;
+    } else {
+        newState.playerRot = radsLerp(newState.playerRot, 0, 0.25);
     }
 
     newState.cameraPos[0] += (newState.playerPos[0] - newState.cameraPos[0]) * 0.5;
