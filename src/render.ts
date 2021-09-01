@@ -78,7 +78,7 @@ export let requestWorldSample = (pos: Vec2): void => {
     g.uniform4f(g.getUniformLocation(shader, 't'), pos[0], pos[1], 0, 0);
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
-    let posLoc = g.getAttribLocation( shader, 'a_position' );
+    let posLoc = g.getAttribLocation( shader, 'a' );
     g.enableVertexAttribArray( posLoc );
     g.vertexAttribPointer( posLoc, 2, gl_BYTE, false, 0, 0 );
     g.drawArrays( gl_TRIANGLES, 0, 3 );
@@ -101,7 +101,7 @@ export let renderState = (state: GameState): void => {
     g.uniform4f(g.getUniformLocation(shader, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, state.tick);
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
-    let posLoc = g.getAttribLocation( shader, 'a_position' );
+    let posLoc = g.getAttribLocation( shader, 'a' );
     g.enableVertexAttribArray( posLoc );
     g.vertexAttribPointer( posLoc, 2, gl_BYTE, false, 0, 0 );
     g.drawArrays( gl_TRIANGLES, 0, 3 );

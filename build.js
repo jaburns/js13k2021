@@ -90,14 +90,20 @@ const generateShaderFile = () =>
     sh.rm( '-rf', 'shadersTmp' );
 };
 
+const filterHtmlDebugReleaseLine = line => !(
+    DEBUG && line.indexOf('RELEASE') > 0 ||
+    !DEBUG && line.indexOf('DEBUG') > 0
+);
+
 const wrapWithHTML = js =>
 {
-    let htmlTemplate = fs.readFileSync( DEBUG ? 'src/index.debug.html' : 'src/index.release.html', 'utf8' );
+    let htmlTemplate = fs.readFileSync( 'src/index.html', 'utf8' );
 
-    if( !DEBUG ) htmlTemplate = htmlTemplate
+    htmlTemplate = htmlTemplate
         .split('\n')
-        .map( line => line.trim() )
-        .join('')
+        .filter( filterHtmlDebugReleaseLine )
+        .map( line => line.replace(/<!--.*?-->/g, '').trim() )
+        .join( DEBUG ? '\n' : '' )
         .trim();
 
     return replaceSimple(htmlTemplate, '__CODE__', js.trim());
