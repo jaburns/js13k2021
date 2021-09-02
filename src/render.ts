@@ -62,8 +62,12 @@ export let initRender = (): void => {
     if( DEBUG )
     {
         let log = g.getShaderInfoLog(fs);
-        if( log === null || log.length > 0 && log.indexOf('ERROR') >= 0 )
-            console.error( 'Shader error', log, main_frag );
+        if( log === null || log.length > 0 ) { 
+            console.log( 'Shader info log:\n' + log );
+            if( log !== null && log.indexOf('ERROR') >= 0 ) {
+                console.error( main_frag.split('\n').map((x,i) => `${i+1}: ${x}`).join('\n') );
+            }
+        }
     }
 
     g.attachShader( shader, vs );
@@ -71,10 +75,14 @@ export let initRender = (): void => {
     g.linkProgram( shader );
 
     g.useProgram(shader);
+    g.activeTexture(gl_TEXTURE0);
 };
 
 export let requestWorldSample = (pos: Vec2): void => {
     g.bindFramebuffer(gl_FRAMEBUFFER, sampleFb);
+
+    g.bindTexture(gl_TEXTURE_2D, null);
+
     g.uniform4f(g.getUniformLocation(shader, 't'), pos[0], pos[1], 0, 0);
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
@@ -94,7 +102,6 @@ export let renderState = (state: GameState): void => {
 
     g.bindFramebuffer(gl_FRAMEBUFFER, null);
 
-    g.activeTexture(gl_TEXTURE0);
     g.bindTexture(gl_TEXTURE_2D, canTex);
     g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, gl_RGBA, gl_UNSIGNED_BYTE, C1);
     g.uniform1i(g.getUniformLocation(shader, 'T'), 0);

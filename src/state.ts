@@ -71,6 +71,9 @@ let PLANET_R1 = 10.0;
 
 export let tickGameState = (oldState: GameState): GameState => {
     let newState = lerpGameState(oldState, oldState, 0);
+    let groundRot = 0;
+    let playerFromPlanet: Vec2 | undefined;
+    let playerDistFromPlanetSqr: number;
 
     newState.tick++;
 
@@ -78,33 +81,29 @@ export let tickGameState = (oldState: GameState): GameState => {
     {
         newState.orbitTheta += newState.orbitOmega;
 
-        let playerPosNew = v2MulAdd(
+        playerFromPlanet = v2MulAdd(
             [0,0],
             [Math.cos(newState.orbitTheta), Math.sin(newState.orbitTheta)],
             newState.orbitRadius
         );
 
-        playerPosNew = [
-              Math.cos(-newState.orbitSquashTheta)*playerPosNew[0]
-            - Math.sin(-newState.orbitSquashTheta)*playerPosNew[1],
-              Math.sin(-newState.orbitSquashTheta)*playerPosNew[0]
-            + Math.cos(-newState.orbitSquashTheta)*playerPosNew[1]
+        playerFromPlanet = [
+              Math.cos(-newState.orbitSquashTheta)*playerFromPlanet[0]
+            - Math.sin(-newState.orbitSquashTheta)*playerFromPlanet[1],
+              Math.sin(-newState.orbitSquashTheta)*playerFromPlanet[0]
+            + Math.cos(-newState.orbitSquashTheta)*playerFromPlanet[1]
         ];
 
-        playerPosNew[1] *= newState.orbitBigRadius / newState.orbitRadius;
+        playerFromPlanet[1] *= newState.orbitBigRadius / newState.orbitRadius;
 
-        playerPosNew = [
-              Math.cos(newState.orbitSquashTheta)*playerPosNew[0]
-            - Math.sin(newState.orbitSquashTheta)*playerPosNew[1],
-              Math.sin(newState.orbitSquashTheta)*playerPosNew[0]
-            + Math.cos(newState.orbitSquashTheta)*playerPosNew[1]
+        playerFromPlanet = [
+              Math.cos(newState.orbitSquashTheta)*playerFromPlanet[0]
+            - Math.sin(newState.orbitSquashTheta)*playerFromPlanet[1],
+              Math.sin(newState.orbitSquashTheta)*playerFromPlanet[0]
+            + Math.cos(newState.orbitSquashTheta)*playerFromPlanet[1]
         ];
 
-        newState.playerPos = v2MulAdd(playerPosNew, newState.orbitOrigin, 1);
-
-        newState.playerRot = radsLerp(newState.playerRot, newState.orbitTheta + Math.PI/2, 0.75);
-        newState.spriteState = SpriteState.Stomping;
-
+        newState.playerPos = v2MulAdd(playerFromPlanet, newState.orbitOrigin, 1);
         newState.cameraZoom = lerp(newState.cameraZoom, 0.75, 0.1);
 
         if( globalKeysDown[KeyCode.Up] ) {
@@ -113,7 +112,6 @@ export let tickGameState = (oldState: GameState): GameState => {
                 v2MulAdd(newState.playerPos, oldState.playerPos, -1),
                 1 / k_orbitSpeed
             );
-            newState.spriteState = SpriteState.Jumping;
             newState.orbitOrigin = 0;
             newState.playerCanJump = Bool.False;
         }
@@ -125,7 +123,6 @@ export let tickGameState = (oldState: GameState): GameState => {
         if( globalKeysDown[KeyCode.Up] && newState.playerCanJump ) {
             newState.playerVel[1] -= 0.5;
             if(newState.playerVel[1] > -0.5) newState.playerVel[1] = -0.5;
-            newState.spriteState = SpriteState.Jumping;
             newState.playerCanJump = Bool.False;
         }
 
@@ -141,7 +138,12 @@ export let tickGameState = (oldState: GameState): GameState => {
             newState.playerVel[0] *= 0.95;
         }
 
-        newState.playerVel[1] += 0.03;
+        playerFromPlanet = v2MulAdd(newState.playerPos, PLANET_POS, -1);
+        playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
+
+        if( playerDistFromPlanetSqr > PLANET_R1*PLANET_R1 || newState.orbitBigRadius ) {
+            newState.playerVel[1] += 0.03;
+        }
 
         newState.playerPos = v2MulAdd(newState.playerPos, newState.playerVel, 1);
         newState.playerPos[0] += newState.playerVel[0];
@@ -149,8 +151,8 @@ export let tickGameState = (oldState: GameState): GameState => {
 
         requestWorldSample(newState.playerPos);
 
-        let playerFromPlanet = v2MulAdd(newState.playerPos, PLANET_POS, -1);
-        let playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
+        playerFromPlanet = v2MulAdd(newState.playerPos, PLANET_POS, -1);
+        playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
 
         if( playerDistFromPlanetSqr < PLANET_R1*PLANET_R1 ) {
             if( !newState.orbitBigRadius && v2Dot(playerFromPlanet, newState.playerVel) > 0 ) {
@@ -174,12 +176,19 @@ export let tickGameState = (oldState: GameState): GameState => {
             let norm: Vec2 = [worldSampleResult[0], worldSampleResult[1]];
             newState.playerVel = v2Reflect(newState.playerVel, norm, 0, 1);
             newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
-            newState.spriteState = SpriteState.Rolling;
-            newState.playerRot = Math.atan2(norm[0], -norm[1]);
+            groundRot = Math.atan2(norm[0], -norm[1]);
             newState.playerCanJump = Bool.True;
         } else {
-            newState.playerRot = radsLerp(newState.playerRot, 0, 0.25);
+            groundRot = radsLerp(newState.playerRot, 0, 0.25);
         }
+    }
+
+    if( newState.orbitOrigin || playerDistFromPlanetSqr! < PLANET_R1*PLANET_R1 && !newState.orbitBigRadius ) {
+        newState.playerRot = radsLerp(newState.playerRot, Math.atan2(playerFromPlanet[0], -playerFromPlanet[1]), 0.75);
+        newState.spriteState = SpriteState.Stomping;
+    } else {
+        newState.playerRot = groundRot;
+        newState.spriteState = newState.playerCanJump ? SpriteState.Rolling : SpriteState.Jumping;
     }
 
     newState.cameraPos[0] += (newState.playerPos[0] - newState.cameraPos[0]) * 0.5;
