@@ -1,7 +1,7 @@
 import { TICK_MS } from './globals';
-import {GameState, lerpGameState, newGameState, tickGameState} from "./state";
-import {initRender, renderState} from "./render";
-import {tickSprite} from './sprite';
+import { GameState, lerpGameState, newGameState, tickGameState } from "./state";
+import { initRender, renderState } from "./render";
+import { tickSprite } from './sprite';
 
 let accTime = 0;
 let prevNow = performance.now();

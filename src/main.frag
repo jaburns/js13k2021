@@ -120,28 +120,31 @@ void main() {
     vec3 colA = 0.5 + 0.5*cos(time+uv.xyx+vec3(0,2,4));
     vec3 colB = 1.0 - colA; // 0.5 + 0.5*cos(time+3.0+uv.xyx+vec3(0,2,4));
 
-    float mapDist = map(worldPos);
-
-    if( mapDist < 0.0 ){
-        samp = 1.0;
-    }
+    vec2 d = vec2(-0.25,0.25) / zoom;
+    samp += 0.25 * (
+        float(map(worldPos + d.xx) <= 0.0) +
+        float(map(worldPos + d.xy) <= 0.0) +
+        float(map(worldPos + d.yx) <= 0.0) +
+        float(map(worldPos + d.yy) <= 0.0)
+    );
 
     const vec2 i_PLANET_POS = vec2(110.0, -8.0);
     const float i_PLANET_R0 = 2.0;
     const float i_PLANET_R1 = 10.0;
 
-    if( length(worldPos - i_PLANET_POS) < i_PLANET_R0 )
+    if( length(worldPos - i_PLANET_POS) < i_PLANET_R0 ) {
         samp = 1.0;
+    }
 
     float dd = (length(worldPos - i_PLANET_POS) - i_PLANET_R0) / (i_PLANET_R1 - i_PLANET_R0);
     if( samp < 0.1 && dd <= 1.0 ) {
-        samp = 0.3 * (1.0 - dd);
+        samp = 0.3 * dd; //  * (1.0 - dd);
     }
 
     vec3 bg = colA * smoothstep(0.6,0.9, noisee(0.1 * (worldPos - 0.5*t.xy)));
 
     gl_FragColor = vec4(
-        mix(bg, colB, samp),
+        mix(bg, colB, min(1.0,samp)),
         1.0
     );
 }

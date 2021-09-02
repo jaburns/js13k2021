@@ -6,7 +6,7 @@ import {
 import { renderSprite } from './sprite';
 import { Vec2 } from './globals';
 import { main_vert, main_frag } from './shaders.gen';
-import {GameState} from "./state";
+import { GameState } from "./state";
 
 declare const DEBUG: boolean;
 declare const C1: HTMLCanvasElement;

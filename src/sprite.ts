@@ -1,5 +1,5 @@
 import { Vec2 } from './globals';
-import {GameState} from './state';
+import { GameState } from './state';
 
 declare const c: CanvasRenderingContext2D;
 declare const k_fullWidth: number;
