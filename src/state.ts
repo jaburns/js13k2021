@@ -22,6 +22,7 @@ export type GameState = {
     orbitSquashTheta: number,
     orbitTheta: number,
     orbitOmega: number,
+    orbitTime: number,
 };
 
 // We can just leave out falsy things whose initial values don't matter
@@ -63,6 +64,7 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     orbitSquashTheta: b.orbitSquashTheta,
     orbitTheta: b.orbitTheta,
     orbitOmega: b.orbitOmega,
+    orbitTime: b.orbitTime,
 });
 
 let PLANET_POS: Vec2 = [110.0, -8.0];
@@ -76,12 +78,16 @@ export let tickGameState = (oldState: GameState): GameState => {
 
     if( newState.orbitOrigin )
     {
+        newState.orbitTime++;
         newState.orbitTheta += newState.orbitOmega;
+
+        let t = newState.orbitTime * 0.005;
+        let radFactor = Math.max(0, 1 - t * t);
 
         let playerPosNew = v2MulAdd(
             [0,0],
             [Math.cos(newState.orbitTheta), Math.sin(newState.orbitTheta)],
-            newState.orbitRadius
+            newState.orbitRadius * radFactor
         );
 
         playerPosNew = [
@@ -91,7 +97,7 @@ export let tickGameState = (oldState: GameState): GameState => {
             + Math.cos(-newState.orbitSquashTheta)*playerPosNew[1]
         ];
 
-        playerPosNew[1] *= newState.orbitBigRadius / newState.orbitRadius;
+        playerPosNew[1] *= radFactor * newState.orbitBigRadius / newState.orbitRadius;
 
         playerPosNew = [
               Math.cos(newState.orbitSquashTheta)*playerPosNew[0]
@@ -108,7 +114,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         newState.cameraZoom = lerp(newState.cameraZoom, 0.75, 0.1);
 
         if( globalKeysDown[KeyCode.Up] ) {
-            newState.playerVel = v2MulAdd(newState.playerPos, oldState.playerPos, -1);
+            newState.playerVel = v2MulAdd([0,0],v2MulAdd(newState.playerPos, oldState.playerPos, -1),1/k_orbitSpeed);
             newState.spriteState = SpriteState.Jumping;
             newState.orbitOrigin = 0;
             newState.playerCanJump = Bool.False;
@@ -156,6 +162,7 @@ export let tickGameState = (oldState: GameState): GameState => {
                 newState.orbitTheta = Math.atan2( playerFromPlanet[1], playerFromPlanet[0] );
                 newState.orbitRadius = R;
                 newState.orbitBigRadius = PLANET_R1;
+                newState.orbitTime = 0;
                 newState.orbitOmega = 
                     k_orbitSpeed * Math.sqrt(v2Dot(newState.playerVel, newState.playerVel)) / PLANET_R1
                     * Math.sign(v2Cross(newState.playerVel, playerFromPlanet));
