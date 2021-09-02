@@ -1,12 +1,10 @@
-import { Vec2 } from './globals';
 import { GameState } from './state';
 
 declare const c: CanvasRenderingContext2D;
 declare const k_fullWidth: number;
 declare const k_fullHeight: number;
-
-const SPRITE_SCALE = 0.075;
-const BASE_SCALE = 21;
+declare const k_baseScale: number;
+declare const k_spriteScale: number;
 
 let animData: any = [
     [
@@ -107,7 +105,7 @@ export let renderSprite = (state: GameState): void => {
     c.strokeStyle = '#f00';
     c.lineCap = 'round';
 
-    let cameraZoom = state.cameraZoom * SPRITE_SCALE;
+    let cameraZoom = state.cameraZoom * k_spriteScale;
 
     for(let layerIdx = 0; layerIdx < animData.length; ++layerIdx) {
         let layer = animData[layerIdx];
@@ -128,8 +126,8 @@ export let renderSprite = (state: GameState): void => {
             c.save();
             c.scale(cameraZoom, cameraZoom);
             c.translate(
-                k_fullWidth/2/cameraZoom - BASE_SCALE*(state.cameraPos[0] - state.playerPos[0])/cameraZoom,
-                k_fullHeight/2/cameraZoom - BASE_SCALE*(state.cameraPos[1] - state.playerPos[1])/cameraZoom
+                k_fullWidth/2/cameraZoom - k_baseScale*(state.cameraPos[0] - state.playerPos[0])/cameraZoom,
+                k_fullHeight/2/cameraZoom - k_baseScale*(state.cameraPos[1] - state.playerPos[1])/cameraZoom
             );
             c.rotate(state.playerRot);
             c.translate(

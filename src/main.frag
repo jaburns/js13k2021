@@ -1,7 +1,6 @@
 uniform sampler2D T;
 uniform vec4 t;
 
-
 // ==================================================================================================
 float hash(vec3 p)  // replace this by something better
 {
@@ -108,7 +107,7 @@ void main() {
         return;
     }
 
-    float zoom = t.z * 21.0; // cameraZoom * baseScale;
+    float zoom = t.z * k_baseScale;
     vec2 worldPos = (gl_FragCoord.xy - (0.5*vec2(k_fullWidth,k_fullHeight)));
     worldPos.y *= -1.0;
     worldPos = worldPos / zoom + t.xy;
@@ -118,7 +117,6 @@ void main() {
     float samp = texture2D(T, uv).r;
     float time = t.w * 0.02;
     vec3 colA = 0.5 + 0.5*cos(time+uv.xyx+vec3(0,2,4));
-    vec3 colB = 1.0 - colA; // 0.5 + 0.5*cos(time+3.0+uv.xyx+vec3(0,2,4));
 
     vec2 d = vec2(-0.25,0.25) / zoom;
     samp += 0.25 * (
@@ -144,7 +142,7 @@ void main() {
     vec3 bg = colA * smoothstep(0.6,0.9, noisee(0.1 * (worldPos - 0.5*t.xy)));
 
     gl_FragColor = vec4(
-        mix(bg, colB, min(1.0,samp)),
+        mix(bg, 1.0 - colA, min(1.0,samp)),
         1.0
     );
 }
