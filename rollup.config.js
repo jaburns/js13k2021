@@ -1,13 +1,14 @@
 import { terser } from 'rollup-plugin-terser';
 import replace from '@rollup/plugin-replace';
+import replaceConfig from './src/constants.json';
 
 const DEBUG = process.argv.indexOf( '--config-debug' ) >= 0;
 
+replaceConfig.preventAssignment = true;
+replaceConfig.DEBUG = DEBUG;
+
 const plugins = [
-  replace({
-    preventAssignment: true,
-    DEBUG
-  })
+  replace(replaceConfig)
 ];
 
 if( !DEBUG ) {
