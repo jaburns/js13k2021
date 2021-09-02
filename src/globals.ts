@@ -14,8 +14,10 @@ document.onkeyup = e => globalKeysDown[e.code[5]] = Bool.False;
 export const enum Bool { False, True }
 
 // https://gist.github.com/shaunlebron/8832585
-export let radsLerp = (a: number, b: number, t: number): number =>
-    a + t*(2*((b - a) % (2*Math.PI)) % (2*Math.PI) - ((b - a) % (2*Math.PI)));
+export let radsLerp = (a: number, b: number, t: number): number => (
+    b = (b-a) % (2*Math.PI),
+    a + t*(2*b%(2*Math.PI) - b)
+);
 
 export type Vec2 = [number, number];
 
