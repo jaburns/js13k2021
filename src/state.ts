@@ -42,7 +42,7 @@ export let newGameState = (): GameState => ({
     cameraPos: [0, 0],
     spriteState: SpriteState.Rolling,
     spriteScaleX: 1,
-    playerPos: [50, 0],
+    playerPos: [0, 0],
     playerRot: 0,
 });
 
