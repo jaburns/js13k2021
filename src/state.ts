@@ -10,7 +10,7 @@ declare const k_jumpSpeed: number;
 declare const k_stompSpeed: number;
 declare const k_lateJumpTicks: number;
 declare const k_maxFallSpeed: number;
-declare const k_zoomLPF: number;
+declare const k_velocityLpfSize: number;
 declare const k_turnAroundMultiplier: number;
 
 export type GameState = {
@@ -19,14 +19,13 @@ export type GameState = {
     cameraPos: Vec2,
     spriteState: SpriteState,
     spriteScaleX: -1|1,
-
     playerPos: Vec2,
-    playerVel: Vec2,
     playerRot: number,
 };
 
 let playerCanJump: number;
 let playerStomped: Bool;
+let playerVel: Vec2 = [0, 0];
 
 let orbitOrigin: Vec2 | 0; // Doubles as flag for if we're currently in orbit
 let orbitRadius: number;
@@ -34,18 +33,16 @@ let orbitBigRadius: number; // Doubles as flag for if we've recently been in orb
 let orbitSquashTheta: number;
 let orbitTheta: number;
 let orbitOmega: number;
-let velZoomLPF: Vec2[] = [];
+let velocityLpf: Vec2[] = [];
 
 // We can just leave out falsy things whose initial values don't matter
-export let newGameState = (): Partial<GameState> => ({
+export let newGameState = (): GameState => ({
     tick: 0,
     cameraZoom: 1,
     cameraPos: [0, 0],
     spriteState: SpriteState.Rolling,
     spriteScaleX: 1,
-
     playerPos: [50, 0],
-    playerVel: [0, 0],
     playerRot: 0,
 });
 
@@ -55,9 +52,7 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     cameraPos: v2Lerp(a.cameraPos, b.cameraPos, t),
     spriteState: b.spriteState,
     spriteScaleX: b.spriteScaleX,
-
     playerPos: v2Lerp(a.playerPos, b.playerPos, t),
-    playerVel: b.playerVel,
     playerRot: radsLerp(a.playerRot, b.playerRot, t),
 });
 
@@ -101,14 +96,14 @@ export let tickGameState = (oldState: GameState): GameState => {
         newState.playerPos = v2MulAdd(playerFromPlanet, orbitOrigin, 1);
         newState.cameraZoom = lerp(newState.cameraZoom, 0.75, 0.1);
 
-        newState.playerVel = v2MulAdd(
+        playerVel = v2MulAdd(
             [0,0],
             v2MulAdd(newState.playerPos, oldState.playerPos, -1),
             1 / k_orbitSpeed
         );
 
         if( globalKeysDown[KeyCode.Up] ) {
-            newState.playerVel[1] -= k_jumpSpeed;
+            playerVel[1] -= k_jumpSpeed;
             orbitOrigin = 0;
             playerCanJump = 0;
             playerStomped = Bool.False;
@@ -119,21 +114,21 @@ export let tickGameState = (oldState: GameState): GameState => {
         newState.cameraZoom = lerp(newState.cameraZoom, 1.0, 0.25);
 
         if( globalKeysDown[KeyCode.Up] && playerCanJump ) {
-            newState.playerVel[1] -= k_jumpSpeed;
+            playerVel[1] -= k_jumpSpeed;
             playerCanJump = 0;
         }
 
         if( !playerCanJump && !playerStomped && globalKeysDown[KeyCode.Down] ) {
-            newState.playerVel[1] = k_stompSpeed;
+            playerVel[1] = k_stompSpeed;
             playerStomped = Bool.True;
         }
 
         let walkAccel = globalKeysDown[KeyCode.Left] ? -k_walkAccel :
             globalKeysDown[KeyCode.Right] ? k_walkAccel : 0;
 
-        if( walkAccel * newState.playerVel[0] < -.0001 ) {
+        if( walkAccel * playerVel[0] < -.0001 ) {
             walkAccel *= k_turnAroundMultiplier;
-        } else if (Math.abs(newState.playerVel[0]) > k_maxRunSpeed) {
+        } else if (Math.abs(playerVel[0]) > k_maxRunSpeed) {
             walkAccel = 0;
         }
 
@@ -144,17 +139,17 @@ export let tickGameState = (oldState: GameState): GameState => {
         playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
 
         if( playerDistFromPlanetSqr > PLANET_R1*PLANET_R1 || orbitBigRadius ) {
-            newState.playerVel[0] += walkAccel;
-            newState.playerVel[1] += k_gravity;
+            playerVel[0] += walkAccel;
+            playerVel[1] += k_gravity;
         }
 
-        if( newState.playerVel[1] > k_maxFallSpeed ) {
-            newState.playerVel[1] = k_maxFallSpeed;
+        if( playerVel[1] > k_maxFallSpeed ) {
+            playerVel[1] = k_maxFallSpeed;
         }
 
-        newState.playerPos = v2MulAdd(newState.playerPos, newState.playerVel, 1);
-        newState.playerPos[0] += newState.playerVel[0];
-        newState.playerPos[1] += newState.playerVel[1];
+        newState.playerPos = v2MulAdd(newState.playerPos, playerVel, 1);
+        newState.playerPos[0] += playerVel[0];
+        newState.playerPos[1] += playerVel[1];
 
         requestWorldSample(newState.playerPos);
 
@@ -162,7 +157,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
 
         if( playerDistFromPlanetSqr < PLANET_R1*PLANET_R1 ) {
-            if( !orbitBigRadius && v2Dot(playerFromPlanet, newState.playerVel) > 0 ) {
+            if( !orbitBigRadius && v2Dot(playerFromPlanet, playerVel) > 0 ) {
                 let R = Math.sqrt( playerDistFromPlanetSqr );
                 orbitOrigin = PLANET_POS;
                 orbitSquashTheta = 
@@ -170,8 +165,8 @@ export let tickGameState = (oldState: GameState): GameState => {
                 orbitRadius = R;
                 orbitBigRadius = PLANET_R1;
                 orbitOmega = 
-                    k_orbitSpeed * Math.sqrt(v2Dot(newState.playerVel, newState.playerVel)) / PLANET_R1
-                    * Math.sign(v2Cross(newState.playerVel, playerFromPlanet));
+                    k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / PLANET_R1
+                    * Math.sign(v2Cross(playerVel, playerFromPlanet));
             }
         } else {
             orbitBigRadius = 0;
@@ -187,7 +182,7 @@ export let tickGameState = (oldState: GameState): GameState => {
             if( playerCanJump > 0 ) playerCanJump--;
         }
         if( worldSampleResult[2] < 1.0 ) {
-            newState.playerVel = v2Reflect(newState.playerVel, norm, 0, 1);
+            playerVel = v2Reflect(playerVel, norm, 0, 1);
             newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
             playerCanJump = k_lateJumpTicks;
             playerStomped = Bool.False;
@@ -206,13 +201,12 @@ export let tickGameState = (oldState: GameState): GameState => {
             : SpriteState.Jumping;
     }
 
-    velZoomLPF.push(newState.playerVel);
-    if( velZoomLPF.length > k_zoomLPF ) velZoomLPF.shift();
-    let velSum = velZoomLPF.reduce((x,v)=>v2MulAdd(x,v,1),[0,0]);
+    velocityLpf.push([playerVel[0], playerVel[1]]);
+    if( velocityLpf.length > k_velocityLpfSize ) velocityLpf.shift();
+    let velSum = velocityLpf.reduce((x,v)=>v2MulAdd(x,v,1),[0,0]);
 
-    let speed = Math.sqrt(v2Dot(velSum, velSum)) / k_zoomLPF;
-    newState.cameraZoom = 1; //  / (1 + 2*speed);
-    newState.cameraPos = v2MulAdd( newState.playerPos, [-5,-5], 1 ); // , 10 / k_zoomLPF );
+    newState.cameraZoom = 1;
+    newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1] + 3], velSum, 10 / k_velocityLpfSize );
 
     return newState;
 };

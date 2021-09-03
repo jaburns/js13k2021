@@ -12,7 +12,7 @@
     "k_stompSpeed": ".5",
     "k_maxFallSpeed": "1",
     "k_lateJumpTicks": "5",
-    "k_zoomLPF": "30",
+    "k_velocityLpfSize": "30",
     "k_turnAroundMultiplier": "3",
 
     "k_orbitSpeed": "2"

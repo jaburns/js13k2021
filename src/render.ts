@@ -105,12 +105,7 @@ export let renderState = (state: GameState): void => {
     g.bindTexture(gl_TEXTURE_2D, canTex);
     g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, gl_RGBA, gl_UNSIGNED_BYTE, C1);
     g.uniform1i(g.getUniformLocation(shader, 'T'), 0);
-    g.uniform4f(g.getUniformLocation(shader, 't'),
-        state.cameraPos[0], // + state.playerPos[0], 
-        state.cameraPos[1], // + state.playerPos[1], 
-        state.cameraZoom, 
-        state.tick
-    );
+    g.uniform4f(g.getUniformLocation(shader, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, state.tick);
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     let posLoc = g.getAttribLocation( shader, 'a' );
