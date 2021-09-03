@@ -105,8 +105,6 @@ export let renderSprite = (state: GameState): void => {
     c.strokeStyle = '#f00';
     c.lineCap = 'round';
 
-    let cameraZoom = state.cameraZoom * k_spriteScale;
-
     for(let layerIdx = 0; layerIdx < animData.length; ++layerIdx) {
         let layer = animData[layerIdx];
 
@@ -124,11 +122,11 @@ export let renderSprite = (state: GameState): void => {
 
         if(frame[1]) {
             c.save();
-            c.scale(cameraZoom, cameraZoom);
             c.translate(
-                k_fullWidth/2/cameraZoom - k_baseScale*(state.cameraPos[0] - state.playerPos[0])/cameraZoom,
-                k_fullHeight/2/cameraZoom - k_baseScale*(state.cameraPos[1] - state.playerPos[1])/cameraZoom
+                k_fullWidth/2 + (state.playerPos[0] - state.cameraPos[0]) * k_baseScale * state.cameraZoom,
+                k_fullHeight/2 + (state.playerPos[1] - state.cameraPos[1]) * k_baseScale * state.cameraZoom
             );
+            c.scale(state.cameraZoom * k_spriteScale, state.cameraZoom * k_spriteScale);
             c.rotate(state.playerRot);
             c.translate(
                 state.spriteScaleX*frame[2],
