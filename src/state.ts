@@ -3,6 +3,11 @@ import { readWorldSample, requestWorldSample, worldSampleResult } from "./render
 import { SpriteState } from "./sprite";
 
 declare const k_orbitSpeed: number;
+declare const k_gravity: number;
+declare const k_walkAccel: number;
+declare const k_maxRunSpeed: number;
+declare const k_jumpSpeed: number;
+declare const k_turnAroundMultiplier: number;
 
 export type GameState = {
     tick: number,
@@ -121,28 +126,28 @@ export let tickGameState = (oldState: GameState): GameState => {
         newState.cameraZoom = lerp(newState.cameraZoom, 1.0, 0.25);
 
         if( globalKeysDown[KeyCode.Up] && newState.playerCanJump ) {
-            newState.playerVel[1] -= 0.5;
-            if(newState.playerVel[1] > -0.5) newState.playerVel[1] = -0.5;
+            newState.playerVel[1] -= k_jumpSpeed;
             newState.playerCanJump = Bool.False;
         }
 
-        if( globalKeysDown[KeyCode.Left] ) {
-            newState.playerVel[0] -= 0.02;
-            newState.spriteScaleX = -1;
+        let walkAccel = globalKeysDown[KeyCode.Left] ? -k_walkAccel :
+            globalKeysDown[KeyCode.Right] ? k_walkAccel : 0;
+
+        if( walkAccel * newState.playerVel[0] < -.0001 ) {
+            walkAccel *= k_turnAroundMultiplier;
+        } else if (Math.abs(newState.playerVel[0]) > k_maxRunSpeed) {
+            walkAccel = 0;
         }
-        else if( globalKeysDown[KeyCode.Right] ) {
-            newState.playerVel[0] += 0.02;
-            newState.spriteScaleX = 1;
-        }
-        else if(newState.playerCanJump) {
-            newState.playerVel[0] *= 0.95;
-        }
+
+        globalKeysDown[KeyCode.Left] && (newState.spriteScaleX = -1);
+        globalKeysDown[KeyCode.Right] && (newState.spriteScaleX = 1);
 
         playerFromPlanet = v2MulAdd(newState.playerPos, PLANET_POS, -1);
         playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
 
         if( playerDistFromPlanetSqr > PLANET_R1*PLANET_R1 || newState.orbitBigRadius ) {
-            newState.playerVel[1] += 0.03;
+            newState.playerVel[0] += walkAccel;
+            newState.playerVel[1] += k_gravity;
         }
 
         newState.playerPos = v2MulAdd(newState.playerPos, newState.playerVel, 1);
