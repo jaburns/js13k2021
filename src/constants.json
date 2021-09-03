@@ -1,14 +1,16 @@
 {
     "k_fullWidth": "1024",
     "k_fullHeight": "768",
-    "k_baseScale": "21.0",
-    "k_spriteScale": "0.075",
-    "k_track": "9.0",
+    "k_baseScale": "21.",
+    "k_spriteScale": ".075",
+    "k_track": "9.",
 
     "k_gravity": ".027",
     "k_walkAccel": ".015",
     "k_maxRunSpeed": ".5",
     "k_jumpSpeed": ".3",
+    "k_stompSpeed": ".5",
+    "k_maxFallSpeed": "1",
     "k_turnAroundMultiplier": "3",
 
     "k_orbitSpeed": "2"

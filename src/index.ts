@@ -1,4 +1,4 @@
-import { TICK_MS } from './globals';
+import { Bool, globalKeysDown, KeyCode, TICK_MS } from './globals';
 import { GameState, lerpGameState, newGameState, tickGameState } from "./state";
 import { initRender, renderState } from "./render";
 import { tickSprite } from './sprite';
@@ -26,6 +26,7 @@ let frame = () => {
     while( accTime > TICK_MS ) {
         accTime -= TICK_MS;
         tick();
+        globalKeysDown[KeyCode.Up] = globalKeysDown[KeyCode.Down] = Bool.False;
     }
 
     renderState(lerpGameState(prevState, curState, accTime / TICK_MS));

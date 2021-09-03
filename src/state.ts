@@ -7,6 +7,8 @@ declare const k_gravity: number;
 declare const k_walkAccel: number;
 declare const k_maxRunSpeed: number;
 declare const k_jumpSpeed: number;
+declare const k_stompSpeed: number;
+declare const k_maxFallSpeed: number;
 declare const k_turnAroundMultiplier: number;
 
 export type GameState = {
@@ -20,6 +22,7 @@ export type GameState = {
     playerVel: Vec2,
     playerRot: number,
     playerCanJump: Bool,
+    playerStomped: Bool,
 
     orbitOrigin: Vec2 | 0, // Doubles as flag for if we're currently in orbit
     orbitRadius: number,
@@ -40,14 +43,6 @@ export let newGameState = (): Partial<GameState> => ({
     playerPos: [50, 0],
     playerVel: [0, 0],
     playerRot: 0,
-//  playerCanJump: Bool.False,
-
-//  orbitOrigin: 0,
-//  orbitRadius: 0,
-//  orbitBigRadius: 0,
-//  orbitSquashTheta: 0,
-//  orbitTheta: 0,
-//  orbitOmega: 0,
 });
 
 export let lerpGameState = (a: GameState, b: GameState, t: number): GameState => ({
@@ -61,6 +56,7 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     playerVel: b.playerVel,
     playerRot: radsLerp(a.playerRot, b.playerRot, t),
     playerCanJump: b.playerCanJump,
+    playerStomped: b.playerStomped,
 
     orbitOrigin: b.orbitOrigin,
     orbitRadius: b.orbitRadius,
@@ -71,7 +67,6 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
 });
 
 let PLANET_POS: Vec2 = [110.0, -8.0];
-let PLANET_R0 = 2.0;
 let PLANET_R1 = 10.0;
 
 export let tickGameState = (oldState: GameState): GameState => {
@@ -113,12 +108,13 @@ export let tickGameState = (oldState: GameState): GameState => {
 
         if( globalKeysDown[KeyCode.Up] ) {
             newState.playerVel = v2MulAdd(
-                [0,0],
+                [0,-k_jumpSpeed],
                 v2MulAdd(newState.playerPos, oldState.playerPos, -1),
                 1 / k_orbitSpeed
             );
             newState.orbitOrigin = 0;
             newState.playerCanJump = Bool.False;
+            newState.playerStomped = Bool.False;
         }
     }
     else
@@ -127,6 +123,12 @@ export let tickGameState = (oldState: GameState): GameState => {
 
         if( globalKeysDown[KeyCode.Up] && newState.playerCanJump ) {
             newState.playerVel[1] -= k_jumpSpeed;
+            newState.playerCanJump = Bool.False;
+        }
+
+        if( !newState.playerCanJump && !newState.playerStomped && globalKeysDown[KeyCode.Down] ) {
+            newState.playerVel[1] = k_stompSpeed;
+            newState.playerStomped = Bool.True;
             newState.playerCanJump = Bool.False;
         }
 
@@ -148,6 +150,10 @@ export let tickGameState = (oldState: GameState): GameState => {
         if( playerDistFromPlanetSqr > PLANET_R1*PLANET_R1 || newState.orbitBigRadius ) {
             newState.playerVel[0] += walkAccel;
             newState.playerVel[1] += k_gravity;
+        }
+
+        if( newState.playerVel[1] > k_maxFallSpeed ) {
+            newState.playerVel[1] = k_maxFallSpeed;
         }
 
         newState.playerPos = v2MulAdd(newState.playerPos, newState.playerVel, 1);
@@ -176,15 +182,18 @@ export let tickGameState = (oldState: GameState): GameState => {
         }
 
         readWorldSample();
+        let norm: Vec2 = [worldSampleResult[0], worldSampleResult[1]];
 
-        if( worldSampleResult[2] < 1.0 ) {
-            let norm: Vec2 = [worldSampleResult[0], worldSampleResult[1]];
-            newState.playerVel = v2Reflect(newState.playerVel, norm, 0, 1);
-            newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
+        if( worldSampleResult[2] < 1.5 ) {
             groundRot = Math.atan2(norm[0], -norm[1]);
-            newState.playerCanJump = Bool.True;
         } else {
             groundRot = radsLerp(newState.playerRot, 0, 0.25);
+        }
+        if( worldSampleResult[2] < 1.0 ) {
+            newState.playerVel = v2Reflect(newState.playerVel, norm, 0, 1);
+            newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
+            newState.playerCanJump = Bool.True;
+            newState.playerStomped = Bool.False;
         }
     }
 
@@ -193,7 +202,10 @@ export let tickGameState = (oldState: GameState): GameState => {
         newState.spriteState = SpriteState.Stomping;
     } else {
         newState.playerRot = groundRot;
-        newState.spriteState = newState.playerCanJump ? SpriteState.Rolling : SpriteState.Jumping;
+        newState.spriteState = 
+            newState.playerStomped ? SpriteState.Stomping
+            : newState.playerCanJump ? SpriteState.Rolling 
+            : SpriteState.Jumping;
     }
 
     newState.cameraPos[0] += (newState.playerPos[0] - newState.cameraPos[0]) * 0.5;

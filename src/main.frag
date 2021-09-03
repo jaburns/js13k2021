@@ -136,7 +136,7 @@ void main() {
 
     float dd = (length(worldPos - i_PLANET_POS) - i_PLANET_R0) / (i_PLANET_R1 - i_PLANET_R0);
     if( samp < 0.1 && dd <= 1.0 ) {
-        samp = 0.3 * dd; //  * (1.0 - dd);
+        samp = 0.3 * (1.0 - dd);
     }
 
     vec3 bg = colA * smoothstep(0.6,0.9, noisee(0.1 * (worldPos - 0.5*t.xy)));
