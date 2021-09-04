@@ -56,7 +56,7 @@ export let initRender = (): void => {
 
     g.shaderSource( vs, main_vert );
     g.compileShader( vs );
-    g.shaderSource( fs, 'precision highp float;'+main_frag );
+    g.shaderSource( fs, 'precision highp float;'+main_frag.replace(/M0/g,'MX') );
     g.compileShader( fs );
 
     if( DEBUG )

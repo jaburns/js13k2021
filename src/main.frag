@@ -38,69 +38,65 @@ float noisee(vec2 pos) {
 
 // ==================================================================================================
 
-// ==================================================================================================
-float rounderge(float a, float b) { return max(min(a, b), 0.) - length(min(vec2(a, b), 0.)); }
+float roundMerge(float a, float b) {
+    return max(min(a, b), 0.) - length(min(vec2(a, b), 0.)); 
+}
 float sdCircle(vec2 P, float x, float y, float r) {
     return length(P - vec2(x, y)) - r;
 }
-float sdRotatedBox(vec2 P, float x, float y, float w, float h, float th)
-{
+float sdRotatedBox(vec2 P, float x, float y, float w, float h, float th) {
     vec2 p = P - vec2(x,y);
     vec2 b = vec2(w,h)*.5;
     vec2 d = abs(p)-b;
     return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
 }
-float cro(in vec2 a, in vec2 b ) { return a.x*b.y - a.y*b.x; }
 float sdCapsule(vec2 p, float x0, float y0, float ra, float x1, float y1, float rb) {
     vec2 pa = vec2(x0, y0);
     vec2 pb = vec2(x1, y1);
-
-
-    p  -= pa;
+    p -= pa;
     pb -= pa;
     float h = dot(pb,pb);
-    vec2  q = vec2( dot(p,vec2(pb.y,-pb.x)), dot(p,pb) )/h;
-    
-    //-----------
-    
+    vec2 q = vec2( dot(p,vec2(pb.y,-pb.x)), dot(p,pb) )/h;
     q.x = abs(q.x);
-    
     float b = ra-rb;
-    vec2  c = vec2(sqrt(h-b*b),b);
-    
-    float k = cro(c,q);
+    vec2 c = vec2(sqrt(h-b*b),b);
+    float k = c.x*q.y - c.y*q.x; 
     float m = dot(c,q);
     float n = dot(q,q);
-    
          if( k < 0.0 ) return sqrt(h*(n            )) - ra;
     else if( k > c.x ) return sqrt(h*(n+1.0-2.0*q.y)) - rb;
                        return m                       - ra;
 }
 
-float map(vec2 p) {
+float M(vec2 p) {return p;}
+float M0(vec2 p) {
     float d = -10000.;
-    d = max(d, -sdCircle(p, 69.89, 4.24, 5.));
-    d = max(d, -sdRotatedBox(p, 90.15, 16.36, 200., 20., 0.));
-    d = max(d, -sdRotatedBox(p, 69.99, 6.80, 50., 10., 0.));
-    d = max(d, -sdCapsule(p, 12.8227216534601, -22.193172092527096, 5., 32.357565959879146, -13.083325408725779, 7.));
-    d = rounderge(d, sdCircle(p, 81.56, -1.47, 8.));
+    d = max(d, -sdRotatedBox(p,-1.3037461904761916, 5.9052033333333345, 50., 10., 0.));
+    d = max(d, -sdRotatedBox(p,45.785495553809554, -12.747340031904761, 50., 10., 0.));
+    d = roundMerge(d, sdCapsule(p,-14.62435109142858, -0.3271636028571412, 5., 6.2633867271428585, 1.3048765323809488, 7.));
+    d = roundMerge(d, sdRotatedBox(p,22.17403851666667, 2.852213210000002, 10., 10., 0.));
     return -d;
 }
+float M1(vec2 p) {
+    float d = -10000.;
+    d = max(d, -sdCircle(p,-1.83, 10.71, 5.));
+    d = max(d, -sdCapsule(p,1.57, 12.95, 5., 19.38, 8.61, 7.));
+    return d;
+}
+
 // ==================================================================================================
 
-
 // Returns the world normal vector at some world space point p
-vec2 getNorm(vec2 p)
-{
+vec2 getNorm(vec2 p) {
     vec2 eps = vec2(1e-4, 0);
     return normalize(vec2(
-        map(p - eps.xy) - map(p + eps.xy),
-        map(p - eps.yx) - map(p + eps.yx)));
+        M(p - eps.xy) - M(p + eps.xy),
+        M(p - eps.yx) - M(p + eps.yx)));
 }
 
 void main() {
     if( t.z == 0.0 ) {
-        gl_FragColor = vec4(-getNorm(t.xy), map(t.xy), 0.0);
+        gl_FragColor = vec4(-getNorm(t.xy), M(t.xy), 0.0);
         return;
     }
 
@@ -117,10 +113,10 @@ void main() {
 
     vec2 d = vec2(-0.25,0.25) / zoom;
     samp += 0.25 * (
-        float(map(worldPos + d.xx) <= 0.0) +
-        float(map(worldPos + d.xy) <= 0.0) +
-        float(map(worldPos + d.yx) <= 0.0) +
-        float(map(worldPos + d.yy) <= 0.0)
+        float(M(worldPos + d.xx) <= 0.0) +
+        float(M(worldPos + d.xy) <= 0.0) +
+        float(M(worldPos + d.yx) <= 0.0) +
+        float(M(worldPos + d.yy) <= 0.0)
     );
 
     const vec2 i_PLANET_POS = vec2(110.0, -8.0);

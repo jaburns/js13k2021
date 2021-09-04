@@ -102,9 +102,8 @@ const render = () => {
 };
 
 document.onkeydown = e => {
-    if(e.key === 'Shift') {
-        shiftDown = true;
-    }
+    if(!e.shiftKey) return;
+
     if(e.code === 'KeyQ') {
         levelObjects.push([ 0, false, 0, 0, 5 ]);
     } else if(e.code === 'KeyW') {
@@ -120,12 +119,11 @@ document.onkeydown = e => {
     }
     if(e.code === 'KeyS') {
         latestObj = -2;
-        textarea.value = JSON.stringify(levelObjects);
-        console.log(compileShader());
+        textarea.value = JSON.stringify(levelObjects) + '\n---\n' + compileShader();
     }
+
     render();
 };
-document.onkeyup = () => shiftDown = false;
 
 canvas.onmousedown = e => {
     mousedown = true;
@@ -192,7 +190,7 @@ canvas.onmousewheel = e => {
 textarea.oninput = () => {
     if( latestObj === -2 ) {
         try {
-            let newObj = JSON.parse(textarea.value);
+            let newObj = JSON.parse(textarea.value.split('---')[0].trim());
             levelObjects = newObj;
             render();
         } catch(e) {
@@ -209,24 +207,29 @@ textarea.oninput = () => {
 
 render();
 
-
 const shapeFn = obj => {
+    const num = x => {
+        let ret = x.toString();
+        if( ret.indexOf('.') < 0 ) ret += '.';
+        let sp = ret.split('.');
+        sp[1] = sp[1].substr(0,2);
+        return sp.join('.');
+    }
     if( obj[0] == 0 ) {
-        return `sdCircle(${obj[2]}, ${obj[3]}, ${obj[4]})`;
+        return `sdCircle(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])})`;
     }
     else if( obj[0] == 1 ) {
-        return `sdCapsule(${obj[2]}, ${obj[3]}, ${obj[4]}, ${obj[5]}, ${obj[6]}, ${obj[7]})`;
+        return `sdCapsule(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])}, ${num(obj[5])}, ${num(obj[6])}, ${num(obj[7])})`;
     }
     else if( obj[0] == 2 ) {
-        return `sdRotatedBox(${obj[2]}, ${obj[3]}, ${obj[4]}, ${obj[5]}, ${obj[6]})`;
+        return `sdRotatedBox(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])}, ${num(obj[5])}, ${num(obj[6])})`;
     }
 };
 
 const compileShader = () => {
     const lines = [
-        `float roundMerge(float a, float b) { return max(min(a, b), 0.) - length(min(vec2(a, b), 0.)); }`,
-        `float exportedMap(vec2 p) {`,
-        `    float d = -10000.;`
+        'float exportedMap(vec2 p) {',
+        '    float d = -10000.;'
     ];
 
     levelObjects.sort((x,y) => x[1] - y[1]);
@@ -237,6 +240,9 @@ const compileShader = () => {
             lines.push(`    d = max(d, -${shapeFn(obj)});`);
         }
     });
+
+    lines.push('    return d;');
+    lines.push('}');
 
     return lines.join('\n');
 }

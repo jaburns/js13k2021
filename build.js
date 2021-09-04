@@ -72,15 +72,30 @@ const generateShaderFile = () =>
         }
     });
 
-    let noRenames = ['main'];
+    let noRenames = ['main', 'M'];
+    for( let i = 0; i < 10; ++i ) {
+        noRenames.push('M' + i);
+    }
 
     run( MONO_RUN + 'tools/shader_minifier.exe --no-renaming-list '+noRenames.join(',')+' --format js -o build/shaders.js --preserve-externals '+(DEBUG ? '--preserve-all-globals' : '')+' shadersTmp/*' );
-    let shaderCode = fs.readFileSync( 'build/shaders.js', 'utf8' );
+    let shaderCode = fs.readFileSync( 'build/shaders.js', 'utf8' ).replace(/\r/g, '');
 
-    shaderCode = shaderCode
+    let shaderLines = shaderCode
         .split('\n')
         .map( x => x.replace(/^var/, 'export let'))
-        .join('\n');
+
+    for( let i = 0; i < shaderLines.length; ++i ){
+        if( shaderLines[i].indexOf('float M(') >= 0 ) {
+            console.log( shaderLines[i] );
+            console.log( shaderLines[i+1] );
+            console.log( shaderLines[i+2] );
+            console.log( shaderLines[i+3] );
+            shaderLines.splice(i, 3);
+            break;
+        }
+    }
+
+    shaderCode = shaderLines.join('\n');
 
     if( DEBUG )
         shaderCode = shaderCode.replace(/" \+/g, '\\n" +');
