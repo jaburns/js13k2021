@@ -28,7 +28,7 @@ float noisee(vec2 pos) {
     mat3 m = mat3( 0.00,  0.80,  0.60,
                     -0.80,  0.36, -0.48,
                     -0.60, -0.48,  0.64 );
-    vec3 q = 8.0*vec3(pos,0);
+    vec3 q = 8.0*vec3(pos,0); // .01*t.w);
     float f = 0.5000*noise( q ); q = m*q*2.01;
           f += 0.2500*noise( q ); q = m*q*2.02;
           f += 0.1250*noise( q ); q = m*q*2.03;
@@ -98,7 +98,7 @@ vec3 getWorldColor(vec2 p) {
 //        c = vec3(0,1,.5);
 //    }
 //
-    vec3 c = mix(1.-vec3(0,.2,1),1.-vec3(0,1,.5),x);
+    vec3 c = mix(vec3(0,.2,1),vec3(0,1,.5),x);
 
     c *= .25+.5*(1.-edge);
     return c;
@@ -149,9 +149,11 @@ void main() {
     }
 
     vec3 bg = background(5.*worldPos - 4.5*t.xy);
+    //vec3 player = .5+.5*colA;
+    vec3 player = vec3(1);//.5+.5*colA;
 
     gl_FragColor = vec4(
-        mix(mix(bg, worldColor, worldAmount), .5+.5*colA, characterAmount),
+        mix(mix(bg, worldColor, worldAmount), player, characterAmount),
         1.0
     );
 }

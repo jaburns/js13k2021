@@ -184,20 +184,27 @@ export let tickGameState = (oldState: GameState): GameState => {
         readWorldSample();
         let norm: Vec2 = [worldSampleResult[0], worldSampleResult[1]];
 
-        if( worldSampleResult[2] < 1.5 ) {
-            groundRot = Math.atan2(norm[0], -norm[1]);
+        if( playerCanJump || norm[1] < -0.1 ) {
+            if( worldSampleResult[2] < 1.5 ) {
+                groundRot = Math.atan2(norm[0], -norm[1]);
+            } else {
+                groundRot = radsLerp(newState.playerRot, 0, 0.25);
+                if( playerCanJump > 0 ) playerCanJump--;
+            }
+            if( worldSampleResult[2] < 1.0 ) {
+                playerVel = v2Reflect(playerVel, norm, 0, 1);
+                newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
+                playerCanJump = k_lateJumpTicks;
+                playerStomped = Bool.False;
+            }
         } else {
             groundRot = radsLerp(newState.playerRot, 0, 0.25);
-            if( playerCanJump > 0 ) playerCanJump--;
-        }
-        if( worldSampleResult[2] < 1.0 ) {
-            playerVel = v2Reflect(playerVel, norm, 0, 1);
-            newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
-            playerCanJump = k_lateJumpTicks;
-            playerStomped = Bool.False;
+            if( worldSampleResult[2] < 1.0 ) {
+                playerVel = v2Reflect(playerVel, norm, 0, 1);
+                newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
+            }
         }
     }
-        
 
     if( orbitOrigin || playerDistFromPlanetSqr! < PLANET_R1*PLANET_R1 && !orbitBigRadius ) {
         newState.playerRot = radsLerp(newState.playerRot, Math.atan2(playerFromPlanet[0], -playerFromPlanet[1]), 0.75);

@@ -70,7 +70,7 @@ const renderRect = obj => {
 };
 
 const renderObject = obj => {
-    ctx.fillStyle = obj[1] ? '#000' : '#0f0';
+    ctx.fillStyle = obj[1] == 1 ? '#000' : obj[1] == 2 ? '#0ff' : '#0f0';
     if( obj[0] === 0 ) renderCircle(obj);
     if( obj[0] === 1 ) renderCapsule(obj);
     if( obj[0] === 2 ) renderRect(obj);
@@ -103,11 +103,11 @@ document.onkeydown = e => {
     if(!e.shiftKey) return;
 
     if(e.code === 'KeyQ') {
-        levelObjects.push([ 0, false, 0, 0, 5 ]);
+        levelObjects.push([ 0, 0, 0, 0, 5 ]);
     } else if(e.code === 'KeyW') {
-        levelObjects.push([ 1, false, 0, 0, 5, 10, 5, 7 ]);
+        levelObjects.push([ 1, 0, 0, 0, 5, 10, 5, 7 ]);
     } else if(e.code === 'KeyE') {
-        levelObjects.push([ 2, false, 0, 0, 50, 10, 0 ]);
+        levelObjects.push([ 2, 0, 0, 0, 50, 10, 0 ]);
     }
     if(e.code === 'KeyX') {
         if( latestObj >= 0 ) {

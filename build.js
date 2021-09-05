@@ -133,7 +133,7 @@ const compileLevelShader = (levelObjects, idx) => {
 
     levelObjects.sort((x,y) => x[1] - y[1]);
     levelObjects.forEach(obj => {
-        if( obj[1] ) {
+        if( obj[1] === 1 ) {
             lines.push(`    d = roundMerge(d, ${shapeFn(obj)});`);
         } else {
             lines.push(`    d = max(d, -${shapeFn(obj)});`);
