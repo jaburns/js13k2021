@@ -45,7 +45,7 @@ float sdCircle(vec2 P, float x, float y, float r) {
     return length(P - vec2(x, y)) - r;
 }
 float sdRotatedBox(vec2 P, float x, float y, float w, float h, float th) {
-    const float i_CORNER_RADIUS = 1.;
+    const float i_CORNER_RADIUS = 0.;
     vec2 p = P - vec2(x,y);
     vec2 b = vec2(w,h)*.5 - i_CORNER_RADIUS;
     vec2 d = abs(p)-b;
@@ -69,7 +69,7 @@ float sdCapsule(vec2 p, float x0, float y0, float ra, float x1, float y1, float 
                        return m                       - ra;
 }
 
-float M(vec2 p) {return p;}
+float M(vec2 p){return p;}
 __LEVELS__
 
 // ==================================================================================================
@@ -83,7 +83,25 @@ vec2 getNorm(vec2 p) {
 }
 
 vec3 getWorldColor(vec2 p) {
-    return vec3(.5 + .5*getNorm(p), .5);
+    float d = M(p);
+    vec2 n = getNorm(p);
+
+    float edge = pow(max(0.,1.+.5*d),3.);
+
+    float x = smoothstep(.45,.55,noisee(
+        .05*p - .1*vec2(n.y,-n.x)*edge
+        - .1*n*edge
+    ));
+
+//    vec3 c = vec3(1,0,.5);
+//    if(n.y > 0.5 && d > -1.) {
+//        c = vec3(0,1,.5);
+//    }
+//
+    vec3 c = mix(vec3(0,.2,1),vec3(0,1,.5),x);
+
+    c *= .25+.75*edge;
+    return c;
 }
 
 vec3 background(vec2 p) {

@@ -140,7 +140,7 @@ const compileLevelShader = (levelObjects, idx) => {
         }
     });
 
-    lines.push('    return -d;');
+    lines.push('    return -1.-d;');
     lines.push('}');
 
     return lines.join('\n');
