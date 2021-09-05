@@ -5,6 +5,7 @@ import { SpriteState } from "./sprite";
 declare const k_orbitSpeed: number;
 declare const k_gravity: number;
 declare const k_walkAccel: number;
+declare const k_walkDecel: number;
 declare const k_maxRunSpeed: number;
 declare const k_jumpSpeed: number;
 declare const k_stompSpeed: number;
@@ -132,6 +133,14 @@ export let tickGameState = (oldState: GameState): GameState => {
             walkAccel = 0;
         }
 
+        if( playerCanJump && !globalKeysDown[KeyCode.Left] && !globalKeysDown[KeyCode.Right] ) {
+            if( Math.abs(playerVel[0]) > k_walkDecel ) {
+                walkAccel = -Math.sign(playerVel[0]) * k_walkDecel;
+            } else {
+                walkAccel = -playerVel[0];
+            }
+        }
+
         globalKeysDown[KeyCode.Left] && (newState.spriteScaleX = -1);
         globalKeysDown[KeyCode.Right] && (newState.spriteScaleX = 1);
 
@@ -206,7 +215,7 @@ export let tickGameState = (oldState: GameState): GameState => {
     let velSum = velocityLpf.reduce((x,v)=>v2MulAdd(x,v,1),[0,0]);
 
     newState.cameraZoom = 1;
-    newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1] + 3], velSum, 10 / k_velocityLpfSize );
+    newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1]], velSum, 10 / k_velocityLpfSize );
 
     return newState;
 };

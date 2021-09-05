@@ -7,6 +7,7 @@
 
     "k_gravity": ".027",
     "k_walkAccel": ".015",
+    "k_walkDecel": ".005",
     "k_maxRunSpeed": ".5",
     "k_jumpSpeed": ".3",
     "k_stompSpeed": ".5",

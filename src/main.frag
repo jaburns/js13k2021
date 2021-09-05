@@ -98,9 +98,9 @@ vec3 getWorldColor(vec2 p) {
 //        c = vec3(0,1,.5);
 //    }
 //
-    vec3 c = mix(vec3(0,.2,1),vec3(0,1,.5),x);
+    vec3 c = mix(1.-vec3(0,.2,1),1.-vec3(0,1,.5),x);
 
-    c *= .25+.75*edge;
+    c *= .25+.5*(1.-edge);
     return c;
 }
 
