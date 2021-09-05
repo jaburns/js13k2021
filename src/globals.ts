@@ -5,11 +5,12 @@ export const enum KeyCode {
     Up = 'U',
     Right = 'R',
     Down = 'D',
+    Space = 'Space',
 }
 
 export let globalKeysDown: {[keyCode: string]: Bool} = {};
-document.onkeydown = e => e.repeat || (globalKeysDown[e.code[5]] = Bool.True);
-document.onkeyup = e => globalKeysDown[e.code[5]] = Bool.False;
+document.onkeydown = e => e.repeat || (globalKeysDown[e.code] = globalKeysDown[e.code[5]] = Bool.True);
+document.onkeyup = e => globalKeysDown[e.code] = globalKeysDown[e.code[5]] = Bool.False;
 
 export const enum Bool { False, True }
 

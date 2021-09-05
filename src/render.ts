@@ -49,6 +49,10 @@ export let initRender = (): void => {
     fullScreenTriVertBuffer = g.createBuffer()!;
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     g.bufferData( gl_ARRAY_BUFFER, Uint8Array.of(1, 1, 1, 128, 128, 1), gl_STATIC_DRAW );
+};
+
+export let loadLevel = (level: number): void => {
+    g.deleteProgram( shader );
 
     let vs = g.createShader( gl_VERTEX_SHADER )!;
     let fs = g.createShader( gl_FRAGMENT_SHADER )!;
@@ -56,7 +60,7 @@ export let initRender = (): void => {
 
     g.shaderSource( vs, main_vert );
     g.compileShader( vs );
-    g.shaderSource( fs, 'precision highp float;'+main_frag.replace(/M0/g,'MX') );
+    g.shaderSource( fs, 'precision highp float;'+main_frag.replace(new RegExp('M'+level, 'g'),'M') );
     g.compileShader( fs );
 
     if( DEBUG )
@@ -73,6 +77,8 @@ export let initRender = (): void => {
     g.attachShader( shader, vs );
     g.attachShader( shader, fs );
     g.linkProgram( shader );
+    g.deleteShader( fs );
+    g.deleteShader( vs );
 
     g.useProgram(shader);
     g.activeTexture(gl_TEXTURE0);

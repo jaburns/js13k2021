@@ -45,10 +45,11 @@ float sdCircle(vec2 P, float x, float y, float r) {
     return length(P - vec2(x, y)) - r;
 }
 float sdRotatedBox(vec2 P, float x, float y, float w, float h, float th) {
+    const float i_CORNER_RADIUS = 1.;
     vec2 p = P - vec2(x,y);
-    vec2 b = vec2(w,h)*.5;
+    vec2 b = vec2(w,h)*.5 - i_CORNER_RADIUS;
     vec2 d = abs(p)-b;
-    return length(max(d,0.0)) + min(max(d.x,d.y),0.0);
+    return length(max(d,0.0)) + min(max(d.x,d.y),0.0) - i_CORNER_RADIUS;
 }
 float sdCapsule(vec2 p, float x0, float y0, float ra, float x1, float y1, float rb) {
     vec2 pa = vec2(x0, y0);
@@ -69,20 +70,7 @@ float sdCapsule(vec2 p, float x0, float y0, float ra, float x1, float y1, float 
 }
 
 float M(vec2 p) {return p;}
-float M0(vec2 p) {
-    float d = -10000.;
-    d = max(d, -sdRotatedBox(p,-1.3037461904761916, 5.9052033333333345, 50., 10., 0.));
-    d = max(d, -sdRotatedBox(p,45.785495553809554, -12.747340031904761, 50., 10., 0.));
-    d = roundMerge(d, sdCapsule(p,-14.62435109142858, -0.3271636028571412, 5., 6.2633867271428585, 1.3048765323809488, 7.));
-    d = roundMerge(d, sdRotatedBox(p,22.17403851666667, 2.852213210000002, 10., 10., 0.));
-    return -d;
-}
-float M1(vec2 p) {
-    float d = -10000.;
-    d = max(d, -sdCircle(p,-1.83, 10.71, 5.));
-    d = max(d, -sdCapsule(p,1.57, 12.95, 5., 19.38, 8.61, 7.));
-    return d;
-}
+__LEVELS__
 
 // ==================================================================================================
 
@@ -92,6 +80,14 @@ vec2 getNorm(vec2 p) {
     return normalize(vec2(
         M(p - eps.xy) - M(p + eps.xy),
         M(p - eps.yx) - M(p + eps.yx)));
+}
+
+vec3 getWorldColor(vec2 p) {
+    return vec3(.5 + .5*getNorm(p), .5);
+}
+
+vec3 background(vec2 p) {
+    return vec3(smoothstep(.7,.9, noisee(0.1 * p)));
 }
 
 void main() {
@@ -107,35 +103,37 @@ void main() {
 
     vec2 uv = gl_FragCoord.xy/vec2(k_fullWidth,k_fullHeight);
     uv.y = 1.0 - uv.y;
-    float samp = texture2D(T, uv).r;
-    float time = t.w * 0.02;
-    vec3 colA = 0.5 + 0.5*cos(time+uv.xyx+vec3(0,2,4));
+    float characterAmount = texture2D(T, uv).r;
+    float time = t.w * 0.2;
+    vec3 colA = 0.5 + 0.5*cos(time+100.*uv.xyx+vec3(0,2,4));
 
     vec2 d = vec2(-0.25,0.25) / zoom;
-    samp += 0.25 * (
+    float worldAmount = 0.25 * (
         float(M(worldPos + d.xx) <= 0.0) +
         float(M(worldPos + d.xy) <= 0.0) +
         float(M(worldPos + d.yx) <= 0.0) +
         float(M(worldPos + d.yy) <= 0.0)
     );
 
+    vec3 worldColor = worldAmount > 0.0 ? getWorldColor(worldPos) : vec3(1);
+
     const vec2 i_PLANET_POS = vec2(110.0, -8.0);
     const float i_PLANET_R0 = 2.0;
     const float i_PLANET_R1 = 10.0;
 
     if( length(worldPos - i_PLANET_POS) < i_PLANET_R0 ) {
-        samp = 1.0;
+        worldAmount = 1.0;
     }
 
     float dd = (length(worldPos - i_PLANET_POS) - i_PLANET_R0) / (i_PLANET_R1 - i_PLANET_R0);
-    if( samp < 0.1 && dd <= 1.0 ) {
-        samp = 0.3 * (1.0 - dd);
+    if( worldAmount < 0.1 && dd <= 1.0 ) {
+        worldAmount = 0.3 * (1.0 - dd);
     }
 
-    vec3 bg = colA * smoothstep(0.6,0.9, noisee(0.1 * (worldPos - 0.5*t.xy)));
+    vec3 bg = background(5.*worldPos - 4.5*t.xy);
 
     gl_FragColor = vec4(
-        mix(bg, 1.0 - colA, min(1.0,samp)),
+        mix(mix(bg, worldColor, worldAmount), .5+.5*colA, characterAmount),
         1.0
     );
 }

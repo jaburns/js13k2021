@@ -19,11 +19,9 @@ const camera = [0,0];
  * [ rect=2, neg, x, y, w, h, angle ]
  *
  */
-let levelObjects = [];
-
-
-
-
+let levels = [[]];
+let curLevel = 0;
+let levelObjects = levels[curLevel];
 
 const crosshair = (x, y) => {
     const X = 0.5/scale;
@@ -119,7 +117,17 @@ document.onkeydown = e => {
     }
     if(e.code === 'KeyS') {
         latestObj = -2;
-        textarea.value = JSON.stringify(levelObjects) + '\n---\n' + compileShader();
+        textarea.value = JSON.stringify(levels);
+    }
+    if(e.code === 'ArrowRight') {
+        if( ++curLevel >= levels.length ) curLevel = levels.length - 1;
+        levelObjects = levels[curLevel];
+        document.title = curLevel;
+    }
+    if(e.code === 'ArrowLeft') {
+        if( --curLevel < 0 ) curLevel = 0;
+        levelObjects = levels[curLevel];
+        document.title = curLevel;
     }
 
     render();
@@ -190,8 +198,9 @@ canvas.onmousewheel = e => {
 textarea.oninput = () => {
     if( latestObj === -2 ) {
         try {
-            let newObj = JSON.parse(textarea.value.split('---')[0].trim());
-            levelObjects = newObj;
+            let newObj = JSON.parse(textarea.value);
+            levels = newObj;
+            levelObjects = levels[curLevel];
             render();
         } catch(e) {
         };
@@ -207,42 +216,3 @@ textarea.oninput = () => {
 
 render();
 
-const shapeFn = obj => {
-    const num = x => {
-        let ret = x.toString();
-        if( ret.indexOf('.') < 0 ) ret += '.';
-        let sp = ret.split('.');
-        sp[1] = sp[1].substr(0,2);
-        return sp.join('.');
-    }
-    if( obj[0] == 0 ) {
-        return `sdCircle(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])})`;
-    }
-    else if( obj[0] == 1 ) {
-        return `sdCapsule(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])}, ${num(obj[5])}, ${num(obj[6])}, ${num(obj[7])})`;
-    }
-    else if( obj[0] == 2 ) {
-        return `sdRotatedBox(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])}, ${num(obj[5])}, ${num(obj[6])})`;
-    }
-};
-
-const compileShader = () => {
-    const lines = [
-        'float exportedMap(vec2 p) {',
-        '    float d = -10000.;'
-    ];
-
-    levelObjects.sort((x,y) => x[1] - y[1]);
-    levelObjects.forEach(obj => {
-        if( obj[1] ) {
-            lines.push(`    d = roundMerge(d, ${shapeFn(obj)});`);
-        } else {
-            lines.push(`    d = max(d, -${shapeFn(obj)});`);
-        }
-    });
-
-    lines.push('    return d;');
-    lines.push('}');
-
-    return lines.join('\n');
-}

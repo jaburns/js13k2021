@@ -6,6 +6,7 @@ const _ = require('lodash');
 const ShapeShifter = require('regpack/shapeShifter');
 const advzipPath = require('advzip-bin');
 const constantsJson = require('./src/constants.json');
+const levelsJson = require('./src/levels.json');
 
 const DEBUG = process.argv.indexOf('--debug') >= 0;
 const MONO_RUN = process.platform === 'win32' ? '' : 'mono ';
@@ -62,13 +63,17 @@ const hashIdentifiers = js =>
 
 const generateShaderFile = () =>
 {
+    const levels = levelsJson.map(compileLevelShader).join('\n');
+
     sh.mkdir( '-p', 'shadersTmp' );
     sh.ls( 'src' ).forEach( x =>
     {
         if( x.endsWith('.frag') || x.endsWith('.vert'))
         {
-            const code = fs.readFileSync( path.resolve( 'src', x ), 'utf8' );
-            fs.writeFileSync( path.resolve( 'shadersTmp', x ), applyConstants( code ));
+            let code = fs.readFileSync( path.resolve( 'src', x ), 'utf8' );
+            code = code.replace('__LEVELS__', levels);
+            code = applyConstants( code );
+            fs.writeFileSync( path.resolve( 'shadersTmp', x ), code );
         }
     });
 
@@ -86,11 +91,7 @@ const generateShaderFile = () =>
 
     for( let i = 0; i < shaderLines.length; ++i ){
         if( shaderLines[i].indexOf('float M(') >= 0 ) {
-            console.log( shaderLines[i] );
-            console.log( shaderLines[i+1] );
-            console.log( shaderLines[i+2] );
-            console.log( shaderLines[i+3] );
-            shaderLines.splice(i, 3);
+            shaderLines.splice(i, 4);
             break;
         }
     }
@@ -104,6 +105,46 @@ const generateShaderFile = () =>
 
     sh.rm( '-rf', 'shadersTmp' );
 };
+
+const compileLevelShader = (levelObjects, idx) => {
+    const shapeFn = obj => {
+        const num = x => {
+            let ret = x.toString();
+            if( ret.indexOf('.') < 0 ) ret += '.';
+            let sp = ret.split('.');
+            sp[1] = sp[1].substr(0,2);
+            return sp.join('.');
+        }
+        if( obj[0] == 0 ) {
+            return `sdCircle(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])})`;
+        }
+        else if( obj[0] == 1 ) {
+            return `sdCapsule(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])}, ${num(obj[5])}, ${num(obj[6])}, ${num(obj[7])})`;
+        }
+        else if( obj[0] == 2 ) {
+            return `sdRotatedBox(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])}, ${num(obj[5])}, ${num(obj[6])})`;
+        }
+    };
+
+    const lines = [
+        `float M${idx}(vec2 p) {`,
+        '    float d = -10000.;'
+    ];
+
+    levelObjects.sort((x,y) => x[1] - y[1]);
+    levelObjects.forEach(obj => {
+        if( obj[1] ) {
+            lines.push(`    d = roundMerge(d, ${shapeFn(obj)});`);
+        } else {
+            lines.push(`    d = max(d, -${shapeFn(obj)});`);
+        }
+    });
+
+    lines.push('    return -d;');
+    lines.push('}');
+
+    return lines.join('\n');
+}
 
 const filterHtmlDebugReleaseLine = line => !(
     DEBUG && line.indexOf('RELEASE') > 0 ||
