@@ -78,21 +78,19 @@ export let tickGameState = (oldState: GameState): GameState => {
             orbitRadius
         );
 
-        playerFromPlanet = [
-              Math.cos(-orbitSquashTheta)*playerFromPlanet[0]
-            - Math.sin(-orbitSquashTheta)*playerFromPlanet[1],
-              Math.sin(-orbitSquashTheta)*playerFromPlanet[0]
-            + Math.cos(-orbitSquashTheta)*playerFromPlanet[1]
-        ];
-
-        playerFromPlanet[1] *= orbitBigRadius / orbitRadius;
-
-        playerFromPlanet = [
-              Math.cos(orbitSquashTheta)*playerFromPlanet[0]
-            - Math.sin(orbitSquashTheta)*playerFromPlanet[1],
-              Math.sin(orbitSquashTheta)*playerFromPlanet[0]
-            + Math.cos(orbitSquashTheta)*playerFromPlanet[1]
-        ];
+        // playerFromPlanet = [
+        //       Math.cos(-orbitSquashTheta)*playerFromPlanet[0]
+        //     - Math.sin(-orbitSquashTheta)*playerFromPlanet[1],
+        //       Math.sin(-orbitSquashTheta)*playerFromPlanet[0]
+        //     + Math.cos(-orbitSquashTheta)*playerFromPlanet[1]
+        // ];
+        // playerFromPlanet[1] *= orbitBigRadius / orbitRadius;
+        // playerFromPlanet = [
+        //       Math.cos(orbitSquashTheta)*playerFromPlanet[0]
+        //     - Math.sin(orbitSquashTheta)*playerFromPlanet[1],
+        //       Math.sin(orbitSquashTheta)*playerFromPlanet[0]
+        //     + Math.cos(orbitSquashTheta)*playerFromPlanet[1]
+        // ];
 
         newState.playerPos = v2MulAdd(playerFromPlanet, orbitOrigin, 1);
 
@@ -171,8 +169,11 @@ export let tickGameState = (oldState: GameState): GameState => {
                 orbitRadius = R;
                 orbitBigRadius = PLANET_R1;
                 orbitOmega = 
-                    k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / PLANET_R1
+                    k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / R
                     * Math.sign(v2Cross(playerVel, playerFromPlanet));
+            //  orbitOmega = 
+            //      k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / PLANET_R1
+            //      * Math.sign(v2Cross(playerVel, playerFromPlanet));
             }
         } else {
             orbitBigRadius = 0;
