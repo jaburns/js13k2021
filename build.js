@@ -204,6 +204,7 @@ const main = () =>
 
     x = wrapWithHTML( x );
     x = applyConstants( x );
+    x = x.replace('__2D__', '2d');
     fs.writeFileSync( 'build/index.html', x );
 
     if( !DEBUG )

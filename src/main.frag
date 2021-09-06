@@ -125,11 +125,15 @@ void main() {
     float zoom = t.z * k_baseScale;
     vec2 worldPos = (gl_FragCoord.xy - (0.5*vec2(k_fullWidth,k_fullHeight)));
     worldPos.y *= -1.0;
+    vec2 worldPosZ = .2*worldPos + .2*t.xy;
     worldPos = worldPos / zoom + t.xy;
+
+
 
     vec2 uv = gl_FragCoord.xy/vec2(k_fullWidth,k_fullHeight);
     uv.y = 1.0 - uv.y;
-    float characterAmount = texture2D(T, uv).r;
+    vec3 canvasSample = texture2D(T, uv).rgb;
+    float characterAmount = canvasSample.r <= .48 ? canvasSample.r / .48 : 0.;
     float time = t.w * 0.2;
     vec3 colA = 0.5 + 0.5*cos(time+100.*uv.xyx+vec3(0,2,4));
 
@@ -156,7 +160,7 @@ void main() {
         worldAmount = 0.3 * (1.0 - dd);
     }
 
-    vec3 bg = background((5.*worldPos - 4.5*t.xy) * t.z);
+    vec3 bg = background(worldPosZ);
     //vec3 player = .5+.5*colA;
     vec3 player = vec3(1);//.5+.5*colA;
 
@@ -165,8 +169,15 @@ void main() {
     //dd.y *= .75;
     vec3 glow = vec3(1,1,.8) * pow(.5*max(0.,2.-length(dd)),2.75+.25*sin(.3*t.w));
 
-    gl_FragColor = vec4(
-        glow + mix(mix(bg, worldColor, worldAmount), player, characterAmount),
-        1.0
-    );
+    vec3 color = glow + mix(mix(bg, worldColor, worldAmount), player, characterAmount);
+
+    if( canvasSample.r >= 0.5 ) {
+        if( canvasSample.r >= 0.6 ) {
+            color += vec3(0,1,0) * max(0.,1.-length(2.*canvasSample.gb-1.));
+        } else {
+            color += vec3(0,0,1) * max(0.,1.-length(2.*canvasSample.gb-1.));
+        }
+    }
+
+    gl_FragColor = vec4(color, 1);
 }

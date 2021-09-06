@@ -53,7 +53,7 @@ let animData: any = [
 
 let spriteRenderers = [
     ([ _, radius, x, y ]:any) => {
-        c.fillStyle = '#f00';
+        c.fillStyle = '#700';
         c.beginPath();
         c.arc(x, y, radius, 0, 2*Math.PI);
         c.fill();
@@ -66,7 +66,7 @@ let spriteRenderers = [
         c.stroke();
     },
     ([ _, fill, w, h, x, y ]:any) => {
-        c.fillStyle = fill ? '#f00' : '#000';
+        c.fillStyle = fill ? '#700' : '#000';
         c.fillRect(x, y, w, h);
     },
 ];
@@ -102,7 +102,7 @@ export let tickSprite = (state: SpriteState): void => {
 };
 
 export let renderSprite = (state: GameState): void => {
-    c.strokeStyle = '#f00';
+    c.strokeStyle = '#700';
     c.lineCap = 'round';
 
     for(let layerIdx = 0; layerIdx < animData.length; ++layerIdx) {
@@ -138,21 +138,4 @@ export let renderSprite = (state: GameState): void => {
             c.restore();
         }
     }
-
-    // Draw world space unit circle
-    //{
-    //    if( Math.random() > 0.5 ) return;
-    //    c.save();
-    //    cameraZoom *= BASE_SCALE / SPRITE_SCALE
-    //    c.scale(cameraZoom, cameraZoom);
-    //    c.translate(
-    //        WIDTH/2/cameraZoom - state.cameraPos[0], 
-    //        HEIGHT/2/cameraZoom - state.cameraPos[1]
-    //    );
-    //    c.beginPath();
-    //    c.fillStyle='#f00';
-    //    c.arc(0, 0, 1, 0, 2*Math.PI);
-    //    c.fill();
-    //    c.restore();
-    //}
 };

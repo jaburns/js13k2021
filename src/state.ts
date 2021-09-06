@@ -228,6 +228,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         }
     }
     newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1]], velSum, 10 / k_velocityLpfSize );
+    newState.cameraPos[1] = Math.min(newState.cameraPos[1], 10);
 
     return newState;
 };
