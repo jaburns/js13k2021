@@ -39,7 +39,7 @@ let velocityLpf: Vec2[] = [];
 // We can just leave out falsy things whose initial values don't matter
 export let newGameState = (): GameState => ({
     tick: 0,
-    cameraZoom: 1,
+    cameraZoom: 1.5,
     cameraPos: [0, 0],
     spriteState: SpriteState.Rolling,
     spriteScaleX: 1,
@@ -95,7 +95,6 @@ export let tickGameState = (oldState: GameState): GameState => {
         ];
 
         newState.playerPos = v2MulAdd(playerFromPlanet, orbitOrigin, 1);
-        newState.cameraZoom = lerp(newState.cameraZoom, 0.75, 0.1);
 
         playerVel = v2MulAdd(
             [0,0],
@@ -112,8 +111,6 @@ export let tickGameState = (oldState: GameState): GameState => {
     }
     else
     {
-        newState.cameraZoom = lerp(newState.cameraZoom, 1.0, 0.25);
-
         if( globalKeysDown[KeyCode.Up] && playerCanJump ) {
             playerVel[1] -= k_jumpSpeed;
             playerCanJump = 0;
@@ -220,8 +217,15 @@ export let tickGameState = (oldState: GameState): GameState => {
     velocityLpf.push([playerVel[0], playerVel[1]]);
     if( velocityLpf.length > k_velocityLpfSize ) velocityLpf.shift();
     let velSum = velocityLpf.reduce((x,v)=>v2MulAdd(x,v,1),[0,0]);
-
-    newState.cameraZoom = 1;
+    if(v2Dot(playerVel,playerVel) > .1*.1) {
+        if( newState.cameraZoom > 0.7 ) {
+            newState.cameraZoom -= 0.01;
+        }
+    } else {
+        if( newState.cameraZoom < 1.5 ) {
+            newState.cameraZoom += 0.01;
+        }
+    }
     newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1]], velSum, 10 / k_velocityLpfSize );
 
     return newState;

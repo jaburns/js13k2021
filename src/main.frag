@@ -1,11 +1,11 @@
 uniform sampler2D T;
 uniform vec4 t;
+uniform vec4 s;
 
 // ==================================================================================================
-float hash(vec3 p)  // replace this by something better
+float hash(vec3 p)
 {
-    p  = fract( p*0.3183099+.1 );
-    p *= 17.0;
+    p = 17.*fract( p*0.3183099+.1 );
     return fract( p.x*p.y*p.z*(p.x+p.y+p.z) );
 }
 
@@ -88,9 +88,11 @@ vec3 getWorldColor(vec2 p) {
 
     float edge = pow(max(0.,1.+.5*d),3.);
 
+
     float x = smoothstep(.45,.55,noisee(
-        .05*p - .1*vec2(n.y,-n.x)*edge
-        - .1*n*edge
+        edge > .01
+            ? .05*p - .1*vec2(n.y,-n.x)*edge - .1*n*edge
+            : .05*p
     ));
 
 //    vec3 c = vec3(1,0,.5);
@@ -98,14 +100,19 @@ vec3 getWorldColor(vec2 p) {
 //        c = vec3(0,1,.5);
 //    }
 //
-    vec3 c = mix(vec3(0,.2,1),vec3(0,1,.5),x);
+    vec3 c = mix(vec3(0,.8,.4),vec3(0,1,.5),x);
 
     c *= .25+.5*(1.-edge);
     return c;
 }
 
 vec3 background(vec2 p) {
-    return vec3(smoothstep(.7,.9, noisee(0.1 * p)));
+    return 
+        vec3(1,.9,.7) * smoothstep(.73,.9, noisee(0.1 * p))
+        +
+        vec3(.7,.9,1) * smoothstep(.73,.9, noisee(0.1 * p+9.))
+        +
+        vec3(.12,.08,.12) * noisee(.0015 * p+5.);
 }
 
 void main() {
@@ -133,7 +140,7 @@ void main() {
         float(M(worldPos + d.yy) <= 0.0)
     );
 
-    vec3 worldColor = worldAmount > 0.0 ? getWorldColor(worldPos) : vec3(1);
+    vec3 worldColor = worldAmount > 0.0 ? getWorldColor(worldPos) : vec3(1,0,1);
 
     const vec2 i_PLANET_POS = vec2(110.0, -8.0);
     const float i_PLANET_R0 = 2.0;
@@ -148,12 +155,17 @@ void main() {
         worldAmount = 0.3 * (1.0 - dd);
     }
 
-    vec3 bg = background(5.*worldPos - 4.5*t.xy);
+    vec3 bg = background((5.*worldPos - 4.5*t.xy) * t.z);
     //vec3 player = .5+.5*colA;
     vec3 player = vec3(1);//.5+.5*colA;
 
+
+    vec2 dd = worldPos - s.xy;
+    //dd.y *= .75;
+    vec3 glow = vec3(1,1,.8) * pow(.5*max(0.,2.-length(dd)),2.75+.25*sin(.3*t.w));
+
     gl_FragColor = vec4(
-        mix(mix(bg, worldColor, worldAmount), player, characterAmount),
+        glow + mix(mix(bg, worldColor, worldAmount), player, characterAmount),
         1.0
     );
 }
