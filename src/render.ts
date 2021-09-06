@@ -4,7 +4,7 @@ import {
     gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0 
 } from "./glConsts";
 import { renderSprite } from './sprite';
-import { Vec2 } from './globals';
+import { levelObjectData, Vec2 } from './globals';
 import { main_vert, main_frag } from './shaders.gen';
 import { GameState } from "./state";
 
@@ -14,6 +14,7 @@ declare const g: WebGLRenderingContext;
 declare const c: CanvasRenderingContext2D;
 declare const k_fullWidth: number;
 declare const k_fullHeight: number;
+declare const k_baseScale: number;
 
 let canTex: WebGLTexture;
 let sampleTex: WebGLTexture;
@@ -105,6 +106,24 @@ export let renderState = (state: GameState): void => {
     c.fillStyle = '#000';
     c.fillRect(0, 0, k_fullWidth, k_fullHeight);
     renderSprite(state);
+
+    for( let i = 0; i < levelObjectData[0].length; ++i ) {
+        let x = levelObjectData[0][i][1];
+        let y = levelObjectData[0][i][2];
+
+        c.save();
+        c.translate(
+            k_fullWidth/2 + (x - state.cameraPos[0]) * k_baseScale * state.cameraZoom,
+            k_fullHeight/2 + (y - state.cameraPos[1]) * k_baseScale * state.cameraZoom
+        );
+        c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
+        c.fillStyle = '#fff';
+        c.beginPath();
+        c.arc(0, 0, 1, 0, 2*Math.PI);
+        c.fill();
+        c.restore();
+    }
+
 
     g.bindFramebuffer(gl_FRAMEBUFFER, null);
 

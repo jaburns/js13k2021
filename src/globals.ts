@@ -1,3 +1,5 @@
+declare const __LEVELS_JS__: any;
+
 export const TICK_MS = 33;
 
 export const enum KeyCode {
@@ -7,6 +9,8 @@ export const enum KeyCode {
     Down = 'D',
     Space = 'Space',
 }
+
+export let levelObjectData: any = __LEVELS_JS__;
 
 export let globalKeysDown: {[keyCode: string]: Bool} = {};
 document.onkeydown = e => e.repeat || (globalKeysDown[e.code] = globalKeysDown[e.code[5]] = Bool.True);
