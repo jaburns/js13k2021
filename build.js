@@ -71,7 +71,7 @@ const generateShaderFile = () =>
         if( x.endsWith('.frag') || x.endsWith('.vert'))
         {
             let code = fs.readFileSync( path.resolve( 'src', x ), 'utf8' );
-            code = code.replace('__LEVELS__', levels);
+            code = code.replace('__LEVELS_GLSL__', levels);
             code = applyConstants( code );
             fs.writeFileSync( path.resolve( 'shadersTmp', x ), code );
         }
@@ -106,15 +106,20 @@ const generateShaderFile = () =>
     sh.rm( '-rf', 'shadersTmp' );
 };
 
+const shortenNumber = (x, glsl) => {
+    let ret = x.toString();
+    if( ret.indexOf('.') < 0 ) {
+        if( glsl ) ret += '.';
+        else return ret;
+    }
+    let sp = ret.split('.');
+    sp[1] = sp[1].substr(0,2);
+    return sp.join('.');
+}
+
 const compileLevelShader = (levelObjects, idx) => {
     const shapeFn = obj => {
-        const num = x => {
-            let ret = x.toString();
-            if( ret.indexOf('.') < 0 ) ret += '.';
-            let sp = ret.split('.');
-            sp[1] = sp[1].substr(0,2);
-            return sp.join('.');
-        }
+        const num = x => shortenNumber(x, true);
         if( obj[0] == 0 ) {
             return `sdCircle(p, ${num(obj[2])}, ${num(obj[3])}, ${num(obj[4])})`;
         }
@@ -133,6 +138,7 @@ const compileLevelShader = (levelObjects, idx) => {
 
     levelObjects.sort((x,y) => x[1] - y[1]);
     levelObjects.forEach(obj => {
+        if( obj[0] === 3 ) return; // 3 is item
         if( obj[1] === 1 ) {
             lines.push(`    d = roundMerge(d, ${shapeFn(obj)});`);
         } else {
@@ -145,6 +151,16 @@ const compileLevelShader = (levelObjects, idx) => {
 
     return lines.join('\n');
 }
+
+const getLevelsJs = () =>
+    levelsJson.map( x =>
+        x.filter( y => y[0] === 3 )
+        .map( y => {
+            const ret = y.map( z => shortenNumber(z, false));
+            ret.shift();
+            return ret;
+        })
+    );
 
 const filterHtmlDebugReleaseLine = line => !(
     DEBUG && line.indexOf('RELEASE') > 0 ||
@@ -172,10 +188,13 @@ const main = () =>
 
     console.log('Minifying shaders...');
     generateShaderFile();
+
     console.log('Compiling typescript...');
     run( 'tsc --outDir build' );
+
     console.log('Rolling up bundle...');
-    run( 'rollup -c' + ( DEBUG ? ' --config-debug' : '' ));
+    const levelsJs = JSON.stringify(getLevelsJs()).replace(/"/g, '');
+    run( 'rollup -c' + ( DEBUG ? ' --config-debug' : '' ) + ' --config-levels-js ' + levelsJs);
 
     let x = fs.readFileSync('build/bundle.js', 'utf8');
     if( !DEBUG ) x = hashIdentifiers( x, true );

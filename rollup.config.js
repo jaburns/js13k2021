@@ -3,9 +3,11 @@ import replace from '@rollup/plugin-replace';
 import replaceConfig from './src/constants.json';
 
 const DEBUG = process.argv.indexOf( '--config-debug' ) >= 0;
+const LEVELS_JS = process.argv[1+process.argv.indexOf('--config-levels-js')]
 
 replaceConfig.preventAssignment = true;
 replaceConfig.DEBUG = DEBUG;
+replaceConfig.__LEVELS_JS__ = LEVELS_JS;
 
 const plugins = [
   replace(replaceConfig)

@@ -70,7 +70,7 @@ float sdCapsule(vec2 p, float x0, float y0, float ra, float x1, float y1, float 
 }
 
 float M(vec2 p){return p;}
-__LEVELS__
+__LEVELS_GLSL__
 
 // ==================================================================================================
 

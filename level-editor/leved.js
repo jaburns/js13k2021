@@ -17,6 +17,7 @@ const camera = [0,0];
  * [ circle=0, neg, x, y, radius ]
  * [ capsule=1, neg, x0, y0, radius0, x1, y1, radius1 ]
  * [ rect=2, neg, x, y, w, h, angle ]
+ * [ item=3, kind, x, y ]  kind: 0=coin ; 1=exit
  *
  */
 let levels = [[]];
@@ -74,7 +75,6 @@ const renderObject = obj => {
     if( obj[0] === 0 ) renderCircle(obj);
     if( obj[0] === 1 ) renderCapsule(obj);
     if( obj[0] === 2 ) renderRect(obj);
-    crosshair(obj[2], obj[3]);
 };
 
 const render = () => {
@@ -88,8 +88,12 @@ const render = () => {
     levelObjects.sort((x,y) => x[1] - y[1]);
     levelObjects.forEach( renderObject );
 
-    ctx.strokeStyle = '#f00';
     levelObjects.forEach( obj => {
+        if( obj[0] === 3 ) {
+            ctx.strokeStyle = obj[1] === 0 ? '#ff0' : '#fff';
+        } else {
+            ctx.strokeStyle = '#f0f';
+        }
         crosshair(obj[2], obj[3]);
         if( obj[0] == 1 ) crosshair(obj[5], obj[6]);
     });
@@ -103,11 +107,13 @@ document.onkeydown = e => {
     if(!e.shiftKey) return;
 
     if(e.code === 'KeyQ') {
-        levelObjects.push([ 0, 0, 0, 0, 5 ]);
+        levelObjects.push([ 0, 0, -camera[0], -camera[1], 5 ]);
     } else if(e.code === 'KeyW') {
-        levelObjects.push([ 1, 0, 0, 0, 5, 10, 5, 7 ]);
+        levelObjects.push([ 1, 0, -camera[0], -camera[1], 5, 10, 5, 7 ]);
     } else if(e.code === 'KeyE') {
-        levelObjects.push([ 2, 0, 0, 0, 50, 10, 0 ]);
+        levelObjects.push([ 2, 0, -camera[0], -camera[1], 50, 10, 0 ]);
+    } else if(e.code === 'KeyR') {
+        levelObjects.push([ 3, 0, -camera[0], -camera[1] ]);
     }
     if(e.code === 'KeyX') {
         if( latestObj >= 0 ) {

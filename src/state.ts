@@ -13,6 +13,7 @@ declare const k_lateJumpTicks: number;
 declare const k_maxFallSpeed: number;
 declare const k_velocityLpfSize: number;
 declare const k_turnAroundMultiplier: number;
+declare const __LEVELS_JS__: any;
 
 export type GameState = {
     tick: number,
@@ -23,6 +24,8 @@ export type GameState = {
     playerPos: Vec2,
     playerRot: number,
 };
+
+let levelObjectData: any = __LEVELS_JS__;
 
 let playerCanJump: number;
 let playerStomped: Bool;
@@ -227,6 +230,8 @@ export let tickGameState = (oldState: GameState): GameState => {
         }
     }
     newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1]], velSum, 10 / k_velocityLpfSize );
+
+    console.log(levelObjectData);
 
     return newState;
 };
