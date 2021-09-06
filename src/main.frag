@@ -100,7 +100,8 @@ vec3 getWorldColor(vec2 p) {
 //        c = vec3(0,1,.5);
 //    }
 //
-    vec3 c = mix(vec3(0,.8,.4),vec3(0,1,.5),x);
+    vec3 cc = vec3(.5,1,.8);
+    vec3 c = mix(.8*cc,cc,x);
 
     c *= .25+.5*(1.-edge);
     return c;
