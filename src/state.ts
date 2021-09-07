@@ -1,4 +1,4 @@
-import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross } from "./globals";
+import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData } from "./globals";
 import { readWorldSample, requestWorldSample, worldSampleResult } from "./render";
 import { SpriteState } from "./sprite";
 
@@ -229,6 +229,15 @@ export let tickGameState = (oldState: GameState): GameState => {
     }
     newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1]], velSum, 10 / k_velocityLpfSize );
     newState.cameraPos[1] = Math.min(newState.cameraPos[1], 10);
+
+
+    for( let i = 0; i < curLevelObjectData.length; ++i ) {
+        let ddd = v2MulAdd(newState.playerPos, curLevelObjectData[i].slice(1), -1);
+        if( v2Dot(ddd, ddd) < 2 ) {
+            curLevelObjectData.splice(i, 1);
+            i--;
+        }
+    }
 
     return newState;
 };

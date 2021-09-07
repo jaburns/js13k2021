@@ -10,7 +10,11 @@ export const enum KeyCode {
     Space = 'Space',
 }
 
-export let levelObjectData: any = __LEVELS_JS__;
+export let curLevelObjectData: any;
+
+export let loadLevelData = (idx: number) => {
+    curLevelObjectData = (__LEVELS_JS__)[idx];
+};
 
 export let globalKeysDown: {[keyCode: string]: Bool} = {};
 document.onkeydown = e => e.repeat || (globalKeysDown[e.code] = globalKeysDown[e.code[5]] = Bool.True);

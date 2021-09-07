@@ -167,7 +167,7 @@ void main() {
 
     vec2 dd = worldPos - s.xy;
     //dd.y *= .75;
-    vec3 glow = vec3(1,1,.8) * pow(.5*max(0.,2.-length(dd)),2.75+.25*sin(.3*t.w));
+    vec3 glow = vec3(1,1,.5) * pow(.5*max(0.,2.-length(dd)),2.75+.25*sin(.3*t.w));
 
     vec3 color = glow + mix(mix(bg, worldColor, worldAmount), player, characterAmount);
 

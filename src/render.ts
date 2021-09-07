@@ -4,7 +4,7 @@ import {
     gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0 
 } from "./glConsts";
 import { renderSprite } from './sprite';
-import { levelObjectData, Vec2 } from './globals';
+import { curLevelObjectData, loadLevelData, Vec2 } from './globals';
 import { main_vert, main_frag } from './shaders.gen';
 import { GameState } from "./state";
 
@@ -75,6 +75,7 @@ export let initRender = (): void => {
 };
 
 export let loadLevel = (level: number): void => {
+    loadLevelData( level );
     g.deleteProgram( shader );
 
     let vs = g.createShader( gl_VERTEX_SHADER )!;
@@ -128,9 +129,9 @@ export let renderState = (state: GameState): void => {
     c.fillStyle = '#000';
     c.fillRect(0, 0, k_fullWidth, k_fullHeight);
 
-    for( let i = 0; i < levelObjectData[0].length; ++i ) {
-        let x = levelObjectData[0][i][1];
-        let y = levelObjectData[0][i][2];
+    for( let i = 0; i < curLevelObjectData.length; ++i ) {
+        let x = curLevelObjectData[i][1];
+        let y = curLevelObjectData[i][2];
 
         c.save();
         c.translate(
@@ -138,7 +139,7 @@ export let renderState = (state: GameState): void => {
             k_fullHeight/2 + (y - state.cameraPos[1]) * k_baseScale * state.cameraZoom
         );
         c.scale(k_baseScale * state.cameraZoom * 1/k_coordTexHalfSize, k_baseScale * state.cameraZoom * 1/k_coordTexHalfSize);
-        c.drawImage(itemCoordSprites[levelObjectData[0][i][0]], -k_coordTexHalfSize, -k_coordTexHalfSize);
+        c.drawImage(itemCoordSprites[curLevelObjectData[i][0]], -k_coordTexHalfSize, -k_coordTexHalfSize);
         c.restore();
     }
 
