@@ -132,7 +132,7 @@ void main() {
 
     vec2 uv = gl_FragCoord.xy/vec2(k_fullWidth,k_fullHeight);
     uv.y = 1.0 - uv.y;
-    vec3 canvasSample = texture2D(T, uv).rgb;
+    vec4 canvasSample = texture2D(T, uv);
     float characterAmount = canvasSample.r <= .48 ? canvasSample.r / .48 : 0.;
     float time = t.w * 0.2;
     vec3 colA = 0.5 + 0.5*cos(time+100.*uv.xyx+vec3(0,2,4));
@@ -171,13 +171,13 @@ void main() {
 
     vec3 color = glow + mix(mix(bg, worldColor, worldAmount), player, characterAmount);
 
-    if( canvasSample.r >= 0.5 ) {
-        if( canvasSample.r >= 0.6 ) {
-            color += vec3(0,1,0) * max(0.,1.-length(2.*canvasSample.gb-1.));
+    if( canvasSample.r > 0.5 ) {
+        if( canvasSample.r < 0.51 ) {
+            color += (s.w > 0.5 ? vec3(0,1,0) : vec3(1,0,0)) * max(0.,1.-length(2.*canvasSample.gb-1.));
         } else {
-            color += vec3(0,0,1) * max(0.,1.-length(2.*canvasSample.gb-1.));
+            color += vec3(0,.5,1) * max(0.,1.-length(2.*canvasSample.gb-1.));
         }
     }
-
-    gl_FragColor = vec4(color, 1);
+   
+    gl_FragColor = vec4(color *s.z, 1);
 }

@@ -15,36 +15,21 @@ declare const c: CanvasRenderingContext2D;
 declare const k_fullWidth: number;
 declare const k_fullHeight: number;
 declare const k_baseScale: number;
-declare const k_coordTexSize: number;
-declare const k_coordTexHalfSize: number;
 
 let canTex: WebGLTexture;
 let sampleTex: WebGLTexture;
 let sampleFb: WebGLFramebuffer;
 let fullScreenTriVertBuffer: WebGLBuffer;
 let shader: WebGLProgram;
-let itemCoordSprites: HTMLCanvasElement[] = [];
+
+let greenGrad = c.createLinearGradient(-1, 0, 1, 0);
+greenGrad.addColorStop(0, "#000");
+greenGrad.addColorStop(1, "#0f0");
+let blueGrad = c.createLinearGradient(0, -1, 0, 1);
+blueGrad.addColorStop(0, "#000");
+blueGrad.addColorStop(1, "#00f");
 
 export let worldSampleResult = new Float32Array(4);
-
-{
-    for( let i = 0; i < 2; ++i ) {
-        let C2: HTMLCanvasElement = document.createElement('canvas');
-        C2.width = C2.height = k_coordTexSize;
-        let ctx = C2.getContext('__2D__')! as CanvasRenderingContext2D;
-        let img = ctx.createImageData(k_coordTexSize, k_coordTexSize);
-        for( let ix  = 0; ix < k_coordTexSize ; ++ix) {
-            for( let iy  = 0; iy < k_coordTexSize ; ++iy) {
-                img.data[(ix+k_coordTexSize*iy)*4 + 0] = 130 + 50*i;
-                img.data[(ix+k_coordTexSize*iy)*4 + 1] = 255 * ix/(k_coordTexSize - 1);
-                img.data[(ix+k_coordTexSize*iy)*4 + 2] = 255 * iy/(k_coordTexSize - 1);
-                img.data[(ix+k_coordTexSize*iy)*4 + 3] = 255;
-            }
-        }
-        ctx.putImageData(img, 0, 0);
-        itemCoordSprites.push(C2);
-    }
-}
 
 export let initRender = (): void => {
     g.getExtension('OES_texture_float');
@@ -126,22 +111,46 @@ export let readWorldSample = (): void =>
     g.readPixels(0, 0, 1, 1, gl_RGBA, gl_FLOAT, worldSampleResult);
 
 export let renderState = (state: GameState): void => {
-    c.fillStyle = '#000';
-    c.fillRect(0, 0, k_fullWidth, k_fullHeight);
+    c.clearRect(0,0,k_fullWidth, k_fullHeight);
+    c.fillStyle='#000';
+    c.fillRect(0,0,k_fullWidth, k_fullHeight);
+
+    c.imageSmoothingEnabled = false;
+    let op = c.globalCompositeOperation;
+    c.globalCompositeOperation = 'lighter'
 
     for( let i = 0; i < curLevelObjectData.length; ++i ) {
         let x = curLevelObjectData[i][1];
         let y = curLevelObjectData[i][2];
+
+        let objScale = curLevelObjectData[i][0] ? 3 : 1;
 
         c.save();
         c.translate(
             k_fullWidth/2 + (x - state.cameraPos[0]) * k_baseScale * state.cameraZoom,
             k_fullHeight/2 + (y - state.cameraPos[1]) * k_baseScale * state.cameraZoom
         );
-        c.scale(k_baseScale * state.cameraZoom * 1/k_coordTexHalfSize, k_baseScale * state.cameraZoom * 1/k_coordTexHalfSize);
-        c.drawImage(itemCoordSprites[curLevelObjectData[i][0]], -k_coordTexHalfSize, -k_coordTexHalfSize);
+        c.scale(k_baseScale * state.cameraZoom * objScale, k_baseScale * state.cameraZoom * objScale);
+
+        let red = curLevelObjectData[i][0] ? 0 : 3;
+        c.fillStyle = `#${(128+red).toString(16)}0000`;
+        c.fillRect(-1.1,-1.1,2.2,2.2);
+        c.fillStyle = greenGrad;
+        c.fillRect(-1.1,-1.1,2.2,2.2);
+        c.fillStyle = blueGrad;
+        c.fillRect(-1.1,-1.1,2.2,2.2);
+
+        // Undo antialiasing
+        c.clearRect(-1.2,-1.2,.2,2.4);
+        c.clearRect(-1.2,-1.2,2.4,.2);
+        c.clearRect(1,-1.2,.2,2.4);
+        c.clearRect(-1.2,1,2.4,.2);
+
         c.restore();
     }
+
+    c.globalCompositeOperation = op;
+    c.imageSmoothingEnabled = true;
 
     renderSprite(state);
 
@@ -151,7 +160,7 @@ export let renderState = (state: GameState): void => {
     g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, gl_RGBA, gl_UNSIGNED_BYTE, C1);
     g.uniform1i(g.getUniformLocation(shader, 'T'), 0);
     g.uniform4f(g.getUniformLocation(shader, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, state.tick);
-    g.uniform4f(g.getUniformLocation(shader, 's'), state.playerPos[0], state.playerPos[1], 0,0);
+    g.uniform4f(g.getUniformLocation(shader, 's'), state.playerPos[0], state.playerPos[1], state.fade, state.canBeDone ? 1 : 0);
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     let posLoc = g.getAttribLocation( shader, 'a' );

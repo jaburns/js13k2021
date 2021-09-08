@@ -9,8 +9,6 @@ let prevNow = performance.now();
 let curState: GameState;
 let prevState: GameState;
 
-curState = prevState = newGameState();
-
 let tick = () => {
     prevState = curState;
     curState = tickGameState(curState);
@@ -33,6 +31,11 @@ let frame = () => {
         globalKeysDown[KeyCode.Up] = globalKeysDown[KeyCode.Down] = Bool.False;
     }
 
+    if( curState.fade < 0 ) {
+        curState = prevState = newGameState();
+        loadLevel(Math.floor(Math.random()));
+    }
+
     //if( globalKeysDown[KeyCode.Space] && !heldSpace ) {
     //    heldSpace = true;
     //    curState = prevState = newGameState();
@@ -45,6 +48,8 @@ let frame = () => {
     renderState(lerpGameState(prevState, curState, accTime / TICK_MS));
 };
 
+
 initRender();
+curState = prevState = newGameState();
 loadLevel(Math.floor(Math.random()));
 frame();
