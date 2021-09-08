@@ -5,17 +5,9 @@ import { tickSprite } from './sprite';
 
 let accTime = 0;
 let prevNow = performance.now();
-
 let curState: GameState;
 let prevState: GameState;
-
-let tick = () => {
-    prevState = curState;
-    curState = tickGameState(curState);
-    tickSprite(curState.spriteState);
-};
-
-//let heldSpace = false;
+let curLevel = 0;
 
 let frame = () => {
     requestAnimationFrame(frame);
@@ -27,29 +19,25 @@ let frame = () => {
 
     while( accTime > TICK_MS ) {
         accTime -= TICK_MS;
-        tick();
+
+        prevState = curState;
+        curState = tickGameState(curState);
+
+        tickSprite(curState.spriteState);
+
         globalKeysDown[KeyCode.Up] = globalKeysDown[KeyCode.Down] = Bool.False;
     }
 
-    if( curState.fade < 0 ) {
+    if( curState.fade < 0  ) {
+        if( curState.canBeDone > 0 ) curLevel++;
         curState = prevState = newGameState();
-        loadLevel(Math.floor(Math.random()));
+        loadLevel(curLevel);
     }
-
-    //if( globalKeysDown[KeyCode.Space] && !heldSpace ) {
-    //    heldSpace = true;
-    //    curState = prevState = newGameState();
-    //    loadLevel(Math.round(Math.random()));
-    //}
-    //if( !globalKeysDown[KeyCode.Space] ) {
-    //    heldSpace = false;
-    //}
 
     renderState(lerpGameState(prevState, curState, accTime / TICK_MS));
 };
 
-
 initRender();
 curState = prevState = newGameState();
-loadLevel(Math.floor(Math.random()));
+loadLevel(curLevel);
 frame();

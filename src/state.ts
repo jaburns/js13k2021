@@ -260,6 +260,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         }
 
         if( newState.playerPos[1] > 20 ) {
+            newState.canBeDone = -1;
             playerEndState = PlayerEndState.Dead;
         }
     }
