@@ -115,7 +115,6 @@ export let renderState = (state: GameState): void => {
     c.fillStyle='#000';
     c.fillRect(0,0,k_fullWidth, k_fullHeight);
 
-    c.imageSmoothingEnabled = false;
     let op = c.globalCompositeOperation;
     c.globalCompositeOperation = 'lighter'
 
@@ -123,7 +122,9 @@ export let renderState = (state: GameState): void => {
         let x = curLevelObjectData[i][1];
         let y = curLevelObjectData[i][2];
 
-        let objScale = curLevelObjectData[i][0] ? 3 : 1;
+        let objScale = curLevelObjectData[i][0] == 1 ? 3 : 
+            curLevelObjectData[i][0] == 2 ? curLevelObjectData[i][4] :
+            1 ;
 
         c.save();
         c.translate(
@@ -150,7 +151,6 @@ export let renderState = (state: GameState): void => {
     }
 
     c.globalCompositeOperation = op;
-    c.imageSmoothingEnabled = true;
 
     renderSprite(state);
 

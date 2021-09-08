@@ -36,11 +36,13 @@ let playerCanJump: number;
 let playerStomped: Bool;
 let playerVel: Vec2;
 let playerEndState: PlayerEndState;
+let playerFromPlanet: Vec2 | 0;
 
 let orbitOrigin: Vec2 | 0; // Doubles as flag for if we're currently in orbit
 let orbitRadius: number; // Doubles as flag for if we've recently been in orbit
 let orbitTheta: number;
 let orbitOmega: number;
+
 let velocityLpf: Vec2[];
 
 export let newGameState = (): GameState => (
@@ -48,6 +50,7 @@ export let newGameState = (): GameState => (
     playerStomped = Bool.False,
     playerVel = [0,0],
     playerEndState = PlayerEndState.Alive,
+    playerFromPlanet = 0,
     orbitOrigin = 0,
     velocityLpf = [],
     {
@@ -75,14 +78,9 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     canBeDone: lerp(a.canBeDone, b.canBeDone, t),
 });
 
-let PLANET_POS: Vec2 = [110.0, -8.0];
-let PLANET_R1 = 10.0;
-
 export let tickGameState = (oldState: GameState): GameState => {
     let newState = lerpGameState(oldState, oldState, 0);
     let groundRot = 0;
-    let playerFromPlanet: Vec2 | undefined;
-    let playerDistFromPlanetSqr: number;
 
     newState.tick++;
 
@@ -165,10 +163,7 @@ export let tickGameState = (oldState: GameState): GameState => {
                 globalKeysDown[KeyCode.Right] && (newState.spriteScaleX = 1);
             }
 
-            playerFromPlanet = v2MulAdd(newState.playerPos, PLANET_POS, -1);
-            playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
-
-            if( playerDistFromPlanetSqr > PLANET_R1*PLANET_R1 || orbitRadius ) {
+            if( !playerFromPlanet || orbitRadius ) {
                 playerVel[0] += walkAccel;
                 playerVel[1] += k_gravity;
             }
@@ -183,20 +178,29 @@ export let tickGameState = (oldState: GameState): GameState => {
 
             requestWorldSample(newState.playerPos);
 
-            playerFromPlanet = v2MulAdd(newState.playerPos, PLANET_POS, -1);
-            playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
+            playerFromPlanet = 0;
+            for( let i = 0; i < curLevelObjectData.length; ++i ) {
+                if( curLevelObjectData[i][0] == 2 ) { 
+                    let planetPos: Vec2 = [curLevelObjectData[i][1], curLevelObjectData[i][2]];
+                    let playerFromPlanet0 = v2MulAdd(newState.playerPos, planetPos, -1);
+                    let playerDistFromPlanetSqr = v2Dot(playerFromPlanet0, playerFromPlanet0);
 
-            if( playerDistFromPlanetSqr < PLANET_R1*PLANET_R1 ) {
-                if( !orbitRadius && v2Dot(playerFromPlanet, playerVel) > 0 ) {
-                    let R = Math.sqrt( playerDistFromPlanetSqr );
-                    orbitOrigin = PLANET_POS;
-                    orbitTheta = Math.atan2( playerFromPlanet[1], playerFromPlanet[0] );
-                    orbitRadius = R;
-                    orbitOmega = 
-                        k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / R
-                        * Math.sign(v2Cross(playerVel, playerFromPlanet));
+                    if( playerDistFromPlanetSqr < curLevelObjectData[i][4]*curLevelObjectData[i][4] ) {
+                        playerFromPlanet = playerFromPlanet0;
+
+                        if( !orbitRadius && v2Dot(playerFromPlanet, playerVel) > 0 ) {
+                            let R = Math.sqrt( playerDistFromPlanetSqr );
+                            orbitOrigin = planetPos;
+                            orbitTheta = Math.atan2( playerFromPlanet[1], playerFromPlanet[0] );
+                            orbitRadius = R;
+                            orbitOmega = 
+                                k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / R
+                                * Math.sign(v2Cross(playerVel, playerFromPlanet));
+                        }
+                    }
                 }
-            } else {
+            }
+            if( !playerFromPlanet ) {
                 orbitRadius = 0;
             }
 
@@ -225,8 +229,8 @@ export let tickGameState = (oldState: GameState): GameState => {
             }
         }
 
-        if( orbitOrigin || playerDistFromPlanetSqr! < PLANET_R1*PLANET_R1 && !orbitRadius ) {
-            newState.playerRot = radsLerp(newState.playerRot, Math.atan2(playerFromPlanet[0], -playerFromPlanet[1]), 0.75);
+        if( orbitOrigin || playerFromPlanet && !orbitRadius ) {
+            newState.playerRot = radsLerp(newState.playerRot, Math.atan2((playerFromPlanet as any)[0], -(playerFromPlanet as any)[1]), 0.75);
             newState.spriteState = SpriteState.Stomping;
         } else {
             newState.playerRot = groundRot;

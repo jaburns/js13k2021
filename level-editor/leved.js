@@ -17,7 +17,7 @@ const camera = [0,0];
  * [ circle=0, neg, x, y, radius ]
  * [ capsule=1, neg, x0, y0, radius0, x1, y1, radius1 ]
  * [ rect=2, neg, x, y, w, h, angle ]
- * [ item=3, kind, x, y ]  kind: 0=coin ; 1=exit
+ * [ item=3, kind, x, y, 2:r0, 2:r1 ]  kind: 0=coin ; 1=exit ; 2=blackhole
  *
  */
 let levels = [[]];
@@ -43,6 +43,21 @@ const renderCircle = obj => {
     ctx.beginPath();
     ctx.arc(0, 0, obj[4], 0, 2*Math.PI);
     ctx.fill();
+    ctx.restore();
+};
+
+const renderBlackHole = obj => {
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1 / scale;
+    ctx.save();
+    ctx.translate(obj[2], obj[3]);
+    ctx.beginPath();
+    ctx.arc(0, 0, obj[4], 0, 2*Math.PI);
+    ctx.stroke();
+    ctx.strokeStyle = '#f00';
+    ctx.beginPath();
+    ctx.arc(0, 0, obj[5], 0, 2*Math.PI);
+    ctx.stroke();
     ctx.restore();
 };
 
@@ -75,6 +90,7 @@ const renderObject = obj => {
     if( obj[0] === 0 ) renderCircle(obj);
     if( obj[0] === 1 ) renderCapsule(obj);
     if( obj[0] === 2 ) renderRect(obj);
+    if( obj[0] === 3 && obj[1] === 2 ) renderBlackHole(obj);
 };
 
 const render = () => {
@@ -89,10 +105,11 @@ const render = () => {
     levelObjects.forEach( renderObject );
 
     levelObjects.forEach( obj => {
+        ctx.strokeStyle = '#f0f';
         if( obj[0] === 3 ) {
-            ctx.strokeStyle = obj[1] === 0 ? '#ff0' : '#fff';
-        } else {
-            ctx.strokeStyle = '#f0f';
+            if( obj[1] !== 2 ) {
+                ctx.strokeStyle = obj[1] === 0 ? '#ff0' : '#fff';
+            }
         }
         crosshair(obj[2], obj[3]);
         if( obj[0] == 1 ) crosshair(obj[5], obj[6]);
@@ -114,6 +131,8 @@ document.onkeydown = e => {
         levelObjects.push([ 2, 0, -camera[0], -camera[1], 50, 10, 0 ]);
     } else if(e.code === 'KeyR') {
         levelObjects.push([ 3, 0, -camera[0], -camera[1] ]);
+    } else if(e.code === 'KeyT') {
+        levelObjects.push([ 3, 2, -camera[0], -camera[1], 2, 10 ]);
     }
     if(e.code === 'KeyX') {
         if( latestObj >= 0 ) {
