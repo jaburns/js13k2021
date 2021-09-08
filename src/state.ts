@@ -38,21 +38,17 @@ let playerVel: Vec2;
 let playerEndState: PlayerEndState;
 
 let orbitOrigin: Vec2 | 0; // Doubles as flag for if we're currently in orbit
-let orbitRadius: number;
-let orbitBigRadius: number; // Doubles as flag for if we've recently been in orbit
-let orbitSquashTheta: number;
+let orbitRadius: number; // Doubles as flag for if we've recently been in orbit
 let orbitTheta: number;
 let orbitOmega: number;
 let velocityLpf: Vec2[];
 
-// We can just leave out falsy things whose initial values don't matter
 export let newGameState = (): GameState => (
     playerCanJump = 0,
     playerStomped = Bool.False,
     playerVel = [0,0],
     playerEndState = PlayerEndState.Alive,
     orbitOrigin = 0,
-    orbitBigRadius = 0,
     velocityLpf = [],
     {
         tick: 0,
@@ -117,20 +113,6 @@ export let tickGameState = (oldState: GameState): GameState => {
                 orbitRadius
             );
 
-            // playerFromPlanet = [
-            //       Math.cos(-orbitSquashTheta)*playerFromPlanet[0]
-            //     - Math.sin(-orbitSquashTheta)*playerFromPlanet[1],
-            //       Math.sin(-orbitSquashTheta)*playerFromPlanet[0]
-            //     + Math.cos(-orbitSquashTheta)*playerFromPlanet[1]
-            // ];
-            // playerFromPlanet[1] *= orbitBigRadius / orbitRadius;
-            // playerFromPlanet = [
-            //       Math.cos(orbitSquashTheta)*playerFromPlanet[0]
-            //     - Math.sin(orbitSquashTheta)*playerFromPlanet[1],
-            //       Math.sin(orbitSquashTheta)*playerFromPlanet[0]
-            //     + Math.cos(orbitSquashTheta)*playerFromPlanet[1]
-            // ];
-
             newState.playerPos = v2MulAdd(playerFromPlanet, orbitOrigin, 1);
 
             playerVel = v2MulAdd(
@@ -186,7 +168,7 @@ export let tickGameState = (oldState: GameState): GameState => {
             playerFromPlanet = v2MulAdd(newState.playerPos, PLANET_POS, -1);
             playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
 
-            if( playerDistFromPlanetSqr > PLANET_R1*PLANET_R1 || orbitBigRadius ) {
+            if( playerDistFromPlanetSqr > PLANET_R1*PLANET_R1 || orbitRadius ) {
                 playerVel[0] += walkAccel;
                 playerVel[1] += k_gravity;
             }
@@ -205,22 +187,17 @@ export let tickGameState = (oldState: GameState): GameState => {
             playerDistFromPlanetSqr = v2Dot(playerFromPlanet, playerFromPlanet);
 
             if( playerDistFromPlanetSqr < PLANET_R1*PLANET_R1 ) {
-                if( !orbitBigRadius && v2Dot(playerFromPlanet, playerVel) > 0 ) {
+                if( !orbitRadius && v2Dot(playerFromPlanet, playerVel) > 0 ) {
                     let R = Math.sqrt( playerDistFromPlanetSqr );
                     orbitOrigin = PLANET_POS;
-                    orbitSquashTheta = 
                     orbitTheta = Math.atan2( playerFromPlanet[1], playerFromPlanet[0] );
                     orbitRadius = R;
-                    orbitBigRadius = PLANET_R1;
                     orbitOmega = 
                         k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / R
                         * Math.sign(v2Cross(playerVel, playerFromPlanet));
-                //  orbitOmega = 
-                //      k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / PLANET_R1
-                //      * Math.sign(v2Cross(playerVel, playerFromPlanet));
                 }
             } else {
-                orbitBigRadius = 0;
+                orbitRadius = 0;
             }
 
             readWorldSample();
@@ -248,7 +225,7 @@ export let tickGameState = (oldState: GameState): GameState => {
             }
         }
 
-        if( orbitOrigin || playerDistFromPlanetSqr! < PLANET_R1*PLANET_R1 && !orbitBigRadius ) {
+        if( orbitOrigin || playerDistFromPlanetSqr! < PLANET_R1*PLANET_R1 && !orbitRadius ) {
             newState.playerRot = radsLerp(newState.playerRot, Math.atan2(playerFromPlanet[0], -playerFromPlanet[1]), 0.75);
             newState.spriteState = SpriteState.Stomping;
         } else {

@@ -5,9 +5,6 @@
     "k_spriteScale": ".075",
     "k_track": "9.",
 
-    "k_coordTexSize": "64",
-    "k_coordTexHalfSize": "32",
-
     "k_gravity": ".027",
     "k_walkAccel": ".015",
     "k_walkDecel": ".005",
@@ -19,5 +16,5 @@
     "k_velocityLpfSize": "30",
     "k_turnAroundMultiplier": "3",
 
-    "k_orbitSpeed": "2"
+    "k_orbitSpeed": "1.5"
 }
