@@ -4,6 +4,7 @@ import { SpriteState } from "./sprite";
 
 declare const k_orbitSpeed: number;
 declare const k_orbitBoost: number;
+declare const k_gravitySuppressionTicks: number;
 declare const k_gravity: number;
 declare const k_walkAccel: number;
 declare const k_walkDecel: number;
@@ -44,16 +45,18 @@ let orbitOrigin: Vec2 | 0; // Doubles as flag for if we're currently in orbit
 let orbitRadius: number; // Doubles as flag for if we've recently been in orbit
 let orbitTheta: number;
 let orbitOmega: number;
+let gravitySuppressionCountdown: number;
 
 let norm: Vec2;
 
 let velocityLpf: Vec2[];
 
 export let newGameState = (): GameState => (
-    playerCanJump = 0,
-    stompKeyDown = Bool.False,
     playerVel = [0,0],
-    playerFromPlanet = 0,
+    stompKeyDown =
+    playerCanJump =
+    gravitySuppressionCountdown = 
+    playerFromPlanet =
     orbitOrigin = 0,
     velocityLpf = [],
     {
@@ -88,6 +91,8 @@ export let tickGameState = (oldState: GameState): GameState => {
     let groundRot = 0;
 
     newState.tick++;
+    if( gravitySuppressionCountdown > 0 )
+        gravitySuppressionCountdown--;
 
     if( newState.playerEndState == PlayerEndState.Alive ) {
         if( newState.fade < 1 ) {
@@ -129,6 +134,7 @@ export let tickGameState = (oldState: GameState): GameState => {
                 //playerVel[1] -= k_jumpSpeed;
                 orbitOrigin = 0;
                 playerCanJump = 0;
+                gravitySuppressionCountdown = k_gravitySuppressionTicks;
             }
         }
         else
@@ -172,7 +178,8 @@ export let tickGameState = (oldState: GameState): GameState => {
                     walkAccel *= v2Dot([0,-1], norm);
                 }
                 playerVel[0] += walkAccel;
-                playerVel[1] += k_gravity + (globalKeysDown[KeyCode.Down]|0) * k_pumpGravity;
+                if( !gravitySuppressionCountdown )
+                    playerVel[1] += k_gravity + (globalKeysDown[KeyCode.Down]|0) * k_pumpGravity;
             }
 
             if( playerVel[1] > k_maxFallSpeed ) {

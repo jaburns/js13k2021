@@ -18,5 +18,6 @@
     "k_turnAroundMultiplier": "3",
 
     "k_orbitSpeed": "2",
-    "k_orbitBoost": "1.3"
+    "k_orbitBoost": "1.3",
+    "k_gravitySuppressionTicks": "5"
 }
