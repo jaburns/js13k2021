@@ -3,11 +3,13 @@ import { GameState, lerpGameState, newGameState, PlayerEndState, tickGameState }
 import { initRender, loadLevel, renderState } from "./render";
 import { tickSprite } from './sprite';
 
+declare const DEBUG: boolean;
+
 let accTime = 0;
 let prevNow = performance.now();
 let curState: GameState;
 let prevState: GameState;
-let curLevel = 4;
+let curLevel = DEBUG ? 4 : 0;
 
 let frame = () => {
     requestAnimationFrame(frame);
