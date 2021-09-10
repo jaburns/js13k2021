@@ -7,7 +7,7 @@ let accTime = 0;
 let prevNow = performance.now();
 let curState: GameState;
 let prevState: GameState;
-let curLevel = 0;
+let curLevel = 4;
 
 let frame = () => {
     requestAnimationFrame(frame);

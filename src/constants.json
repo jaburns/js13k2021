@@ -17,5 +17,6 @@
     "k_velocityLpfSize": "30",
     "k_turnAroundMultiplier": "3",
 
-    "k_orbitSpeed": "1.5"
+    "k_orbitSpeed": "2",
+    "k_orbitBoost": "1.3"
 }

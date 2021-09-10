@@ -162,11 +162,18 @@ canvas.onmousedown = e => {
     mousedown = true;
     const wx = ((e.offsetX - W/2) / scale) - camera[0];
     const wy = ((e.offsetY - H/2) / scale) - camera[1];
+
+    if( Math.hypot( wx, wy ) < 2 ) {
+        grabbedExt = false;
+        grabbedObj = 'spawn';
+        mousedown = false;
+        return;
+    }
+
     for( let i = 0; i < levelObjects.length; ++i ) {
         let dx = levelObjects[i][2] - wx;
         let dy = levelObjects[i][3] - wy;
         if( Math.hypot( dx, dy ) < 2 ) {
-            console.log( Math.hypot( dx, dy ) , 2 );
             grabbedExt = false;
             grabbedObj = levelObjects[i];
             latestObj = i;
@@ -180,7 +187,6 @@ canvas.onmousedown = e => {
         dx = levelObjects[i][5] - wx;
         dy = levelObjects[i][6] - wy;
         if( Math.hypot( dx, dy ) < 2 ) {
-            console.log( Math.hypot( dx, dy ) , 2 );
             grabbedExt = true;
             grabbedObj = levelObjects[i];
             latestObj = i;
@@ -200,7 +206,21 @@ canvas.onmousemove = e => {
         camera[1] += e.movementY / scale;
         render();
     }
-    if( grabbedObj ) {
+    if( grabbedObj === 'spawn' ) {
+        const dx = e.movementX / scale;
+        const dy = e.movementY / scale;
+
+        for( let i = 0; i < levelObjects.length; ++i ) {
+            levelObjects[i][2] += dx;
+            levelObjects[i][3] += dy;
+            if( levelObjects[i][0] === 1 ) {
+                levelObjects[i][5] += dx;
+                levelObjects[i][6] += dy;
+            }
+        }
+        render();
+    }
+    else if( grabbedObj ) {
         const wx = ((e.offsetX - W/2) / scale) - camera[0];
         const wy = ((e.offsetY - H/2) / scale) - camera[1];
         if( grabbedExt ) {

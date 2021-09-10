@@ -3,6 +3,7 @@ import { readWorldSample, requestWorldSample, worldSampleResult } from "./render
 import { SpriteState } from "./sprite";
 
 declare const k_orbitSpeed: number;
+declare const k_orbitBoost: number;
 declare const k_gravity: number;
 declare const k_walkAccel: number;
 declare const k_walkDecel: number;
@@ -43,6 +44,8 @@ let orbitOrigin: Vec2 | 0; // Doubles as flag for if we're currently in orbit
 let orbitRadius: number; // Doubles as flag for if we've recently been in orbit
 let orbitTheta: number;
 let orbitOmega: number;
+
+let norm: Vec2;
 
 let velocityLpf: Vec2[];
 
@@ -122,7 +125,8 @@ export let tickGameState = (oldState: GameState): GameState => {
             );
 
             if( globalKeysDown[KeyCode.Up] ) {
-                playerVel[1] -= k_jumpSpeed;
+                playerVel = v2MulAdd( [0,0], playerVel, k_orbitBoost);
+                //playerVel[1] -= k_jumpSpeed;
                 orbitOrigin = 0;
                 playerCanJump = 0;
             }
@@ -164,6 +168,9 @@ export let tickGameState = (oldState: GameState): GameState => {
             }
 
             if( !playerFromPlanet || orbitRadius ) {
+                if( playerCanJump && Math.sign(norm[0]) == Math.sign( walkAccel )) {
+                    walkAccel *= v2Dot([0,-1], norm);
+                }
                 playerVel[0] += walkAccel;
                 playerVel[1] += k_gravity + (globalKeysDown[KeyCode.Down]|0) * k_pumpGravity;
             }
@@ -205,7 +212,7 @@ export let tickGameState = (oldState: GameState): GameState => {
             }
 
             readWorldSample();
-            let norm: Vec2 = [worldSampleResult[0], worldSampleResult[1]];
+            norm = [worldSampleResult[0], worldSampleResult[1]];
 
             if( playerCanJump || norm[1] < -0.1 ) {
                 if( worldSampleResult[2] < 1.5 ) {
@@ -279,7 +286,7 @@ export let tickGameState = (oldState: GameState): GameState => {
                 curLevelObjectData[i][1] += ddd[0] * Math.min(1, .5 / dot);
                 curLevelObjectData[i][2] += ddd[1] * Math.min(1, .5 / dot);
             }
-            if(dot < 2) {
+            if(dot < 3) {
                 curLevelObjectData.splice(i, 1);
                 i--;
             }

@@ -118,10 +118,12 @@ void main() {
 
         // ----- Item color ---------------
         
-        if( itemCanvasSample.r > .02 ) {
-            color += vec3(0,.5,1) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
-        } else if( itemCanvasSample.r > .01 ) {
+        if( itemCanvasSample.r > 25./255. ) {
+            color -= vec3(1) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
+        } else if( itemCanvasSample.r > 15./255. ) {
             color += (s.w > 0.5 ? vec3(0,1,0) : vec3(1,0,0)) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
+        } else if( itemCanvasSample.r > 5./255. ) {
+            color += vec3(0,.5,1) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
         }
 
         // ----- Player color ---------------

@@ -150,7 +150,7 @@ export let renderState = (curLevel: number, state: GameState): void => {
         );
         c.scale(k_baseScale * state.cameraZoom * objScale, k_baseScale * state.cameraZoom * objScale);
 
-        let red: any = curLevelObjectData[i][0] ? 3 : 6;
+        let red: any = 10 + 10*curLevelObjectData[i][0];
         red = red.toString(16);
         c.fillStyle = `#${(red.length < 2 ? '0' : '') + red}0000`;
         c.fillRect(-1.1,-1.1,2.2,2.2);
@@ -189,7 +189,7 @@ export let renderState = (curLevel: number, state: GameState): void => {
 
         c.fillStyle = '#0f0';
         c.font = '2px sans-serif';
-        c.fillText(messages[curLevel], -14, -7);
+        c.fillText(messages[curLevel], -15, -9);
 
         c.restore();
     }
