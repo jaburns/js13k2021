@@ -25,7 +25,7 @@ let frame = () => {
 
         tickSprite(curState.spriteState);
 
-        globalKeysDown[KeyCode.Up] = globalKeysDown[KeyCode.Down] = Bool.False;
+        globalKeysDown[KeyCode.Up] = Bool.False;
     }
 
     if( curState.fade < 0  ) {

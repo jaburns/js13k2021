@@ -69,12 +69,20 @@ vec4 sampleWorld(vec2 p, float delta) { // Result: xy -> normal ; z -> dist ; w 
     );
 }
 
+
 // ==================================================================================================
 // Main
 //
+vec3 sampleBackground(vec2 worldPosBg) {
+    return 
+        vec3(1,.9,.7) * smoothstep(.73,.9, noise(0.1 * worldPosBg)) +
+        vec3(.7,.9,1) * smoothstep(.73,.9, noise(0.1 * worldPosBg+9.)) +
+        vec3(.12,.08,.12) * noise(.0015 * worldPosBg+5.);
+}
+
 void main() {
     if( t.z == 0.0 ) {
-        gl_FragColor = sampleWorld(t.xy, .0001);
+        gl_FragColor = sampleWorld(t.xy, .01);
     } else {
         vec2 worldPos = (gl_FragCoord.xy - (0.5*vec2(k_fullWidth,k_fullHeight))),
              uv = gl_FragCoord.xy/vec2(k_fullWidth,k_fullHeight),
@@ -106,15 +114,7 @@ void main() {
 
         // ----- Background color ---------------
 
-        color = mix(
-            (
-                vec3(1,.9,.7) * smoothstep(.73,.9, noise(0.1 * worldPosBg)) +
-                vec3(.7,.9,1) * smoothstep(.73,.9, noise(0.1 * worldPosBg+9.)) +
-                vec3(.12,.08,.12) * noise(.0015 * worldPosBg+5.)
-            ),
-            color,
-            world.w
-        );
+        color = mix(sampleBackground(worldPosBg), color, world.w);
 
         // ----- Item color ---------------
         
@@ -128,6 +128,10 @@ void main() {
 
         float playerAmount = playerCanvasSample.r;
         color += vec3(playerAmount) + vec3(1,1,.5) * pow(.5*max(0.,2.-length(worldPos - s.xy)),2.75+.25*sin(.3*t.w));
+
+        // ----- Message color ---------------
+
+        color += 10.*sampleBackground(worldPosBg+t.w) * playerCanvasSample.g;
 
         // --------------------------------------
        

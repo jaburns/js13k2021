@@ -8,6 +8,7 @@ declare const k_walkAccel: number;
 declare const k_walkDecel: number;
 declare const k_maxRunSpeed: number;
 declare const k_jumpSpeed: number;
+declare const k_pumpGravity: number;
 declare const k_stompSpeed: number;
 declare const k_lateJumpTicks: number;
 declare const k_maxFallSpeed: number;
@@ -34,7 +35,7 @@ export const enum PlayerEndState {
 }
 
 let playerCanJump: number;
-let playerStomped: Bool;
+let stompKeyDown: Bool;
 let playerVel: Vec2;
 let playerFromPlanet: Vec2 | 0;
 
@@ -47,7 +48,7 @@ let velocityLpf: Vec2[];
 
 export let newGameState = (): GameState => (
     playerCanJump = 0,
-    playerStomped = Bool.False,
+    stompKeyDown = Bool.False,
     playerVel = [0,0],
     playerFromPlanet = 0,
     orbitOrigin = 0,
@@ -124,7 +125,6 @@ export let tickGameState = (oldState: GameState): GameState => {
                 playerVel[1] -= k_jumpSpeed;
                 orbitOrigin = 0;
                 playerCanJump = 0;
-                playerStomped = Bool.False;
             }
         }
         else
@@ -138,9 +138,8 @@ export let tickGameState = (oldState: GameState): GameState => {
                     playerCanJump = 0;
                 }
 
-                if( !playerCanJump && !playerStomped && globalKeysDown[KeyCode.Down] ) {
+                if( globalKeysDown[KeyCode.Down] && !stompKeyDown && playerVel[1] < k_stompSpeed ) {
                     playerVel[1] = k_stompSpeed;
-                    playerStomped = Bool.True;
                 }
 
                 walkAccel = globalKeysDown[KeyCode.Left] ? -k_walkAccel :
@@ -166,7 +165,7 @@ export let tickGameState = (oldState: GameState): GameState => {
 
             if( !playerFromPlanet || orbitRadius ) {
                 playerVel[0] += walkAccel;
-                playerVel[1] += k_gravity;
+                playerVel[1] += k_gravity + (globalKeysDown[KeyCode.Down]|0) * k_pumpGravity;
             }
 
             if( playerVel[1] > k_maxFallSpeed ) {
@@ -219,7 +218,6 @@ export let tickGameState = (oldState: GameState): GameState => {
                     playerVel = v2Reflect(playerVel, norm, 0, 1);
                     newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
                     playerCanJump = k_lateJumpTicks;
-                    playerStomped = Bool.False;
                 }
             } else {
                 groundRot = radsLerp(newState.playerRot, 0, 0.25);
@@ -236,9 +234,9 @@ export let tickGameState = (oldState: GameState): GameState => {
         } else {
             newState.playerRot = groundRot;
             newState.spriteState = 
-                playerStomped ? SpriteState.Stomping
-                : playerCanJump ? SpriteState.Rolling 
-                : SpriteState.Jumping;
+                playerCanJump ? SpriteState.Rolling :
+                globalKeysDown[KeyCode.Down] ? SpriteState.Stomping :
+                SpriteState.Jumping;
         }
 
         if( newState.playerPos[1] > 20 ) {
@@ -272,7 +270,7 @@ export let tickGameState = (oldState: GameState): GameState => {
             if(newState.playerEndState == PlayerEndState.Won) {
                 playerVel = v2MulAdd([0,0], playerVel, 0.8);
             }
-            if(newState.canBeDone && dot < 2*2) {
+            if(newState.canBeDone && dot < 3*3) {
                 newState.playerEndState = PlayerEndState.Won;
             }
         }
@@ -287,6 +285,8 @@ export let tickGameState = (oldState: GameState): GameState => {
             }
         }
     }
+
+    stompKeyDown = globalKeysDown[KeyCode.Down];
 
     return newState;
 };

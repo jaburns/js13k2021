@@ -30,13 +30,13 @@ let blueGrad = c.createLinearGradient(0, -1, 0, 1);
 blueGrad.addColorStop(0, "#000");
 blueGrad.addColorStop(1, "#00f");
 
-// let messages = [
-//     'Use the arrows',
-//     'Use the ramp',
-//     'Use momentum',
-//     'Use the down key',
-//     'Use the black hole',
-// ];
+let messages = [
+    'Use the arrows',
+    'Use the ramp',
+    'Use momentum',
+    'Press down to become heavy',
+    'Use the black hole',
+];
 
 export let worldSampleResult = new Float32Array(4);
 
@@ -178,6 +178,21 @@ export let renderState = (curLevel: number, state: GameState): void => {
     c.fillRect(0,0,k_fullWidth, k_fullHeight);
 
     renderSprite(state);
+
+    if( messages[curLevel] ) {
+        c.save();
+        c.translate(
+            k_fullWidth/2 + (0 - state.cameraPos[0]) * k_baseScale * state.cameraZoom,
+            k_fullHeight/2 + (0 - state.cameraPos[1]) * k_baseScale * state.cameraZoom
+        );
+        c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
+
+        c.fillStyle = '#0f0';
+        c.font = '2px sans-serif';
+        c.fillText(messages[curLevel], -14, -7);
+
+        c.restore();
+    }
 
     g.activeTexture(gl_TEXTURE1);
     g.bindTexture(gl_TEXTURE_2D, canTexS);
