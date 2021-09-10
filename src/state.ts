@@ -23,6 +23,7 @@ export type GameState = {
     spriteScaleX: -1|1,
     playerPos: Vec2,
     playerRot: number,
+    playerEndState: PlayerEndState,
     canBeDone: number,
 };
 
@@ -35,7 +36,6 @@ export const enum PlayerEndState {
 let playerCanJump: number;
 let playerStomped: Bool;
 let playerVel: Vec2;
-let playerEndState: PlayerEndState;
 let playerFromPlanet: Vec2 | 0;
 
 let orbitOrigin: Vec2 | 0; // Doubles as flag for if we're currently in orbit
@@ -49,7 +49,6 @@ export let newGameState = (): GameState => (
     playerCanJump = 0,
     playerStomped = Bool.False,
     playerVel = [0,0],
-    playerEndState = PlayerEndState.Alive,
     playerFromPlanet = 0,
     orbitOrigin = 0,
     velocityLpf = [],
@@ -62,6 +61,7 @@ export let newGameState = (): GameState => (
         spriteScaleX: 1,
         playerPos: [0, 0],
         playerRot: 0,
+        playerEndState: PlayerEndState.Alive,
         canBeDone: 0,
     }
 );
@@ -75,6 +75,7 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     spriteScaleX: b.spriteScaleX,
     playerPos: v2Lerp(a.playerPos, b.playerPos, t),
     playerRot: radsLerp(a.playerRot, b.playerRot, t),
+    playerEndState: b.playerEndState,
     canBeDone: lerp(a.canBeDone, b.canBeDone, t),
 });
 
@@ -84,7 +85,7 @@ export let tickGameState = (oldState: GameState): GameState => {
 
     newState.tick++;
 
-    if( playerEndState == PlayerEndState.Alive ) {
+    if( newState.playerEndState == PlayerEndState.Alive ) {
         if( newState.fade < 1 ) {
             newState.fade += 0.1;
         }
@@ -94,7 +95,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         }
     }
 
-    if( playerEndState == PlayerEndState.Won )
+    if( newState.playerEndState == PlayerEndState.Won )
     {
         newState.playerPos[0] += playerVel[0];
         newState.playerPos[1] += playerVel[1];
@@ -130,7 +131,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         {
             let walkAccel = 0;
 
-            if( playerEndState == PlayerEndState.Alive )
+            if( newState.playerEndState == PlayerEndState.Alive )
             {
                 if( globalKeysDown[KeyCode.Up] && playerCanJump ) {
                     playerVel[1] -= k_jumpSpeed;
@@ -241,8 +242,7 @@ export let tickGameState = (oldState: GameState): GameState => {
         }
 
         if( newState.playerPos[1] > 20 ) {
-            newState.canBeDone = -1;
-            playerEndState = PlayerEndState.Dead;
+            newState.playerEndState = PlayerEndState.Dead;
         }
     }
 
@@ -268,6 +268,14 @@ export let tickGameState = (oldState: GameState): GameState => {
     for( let i = 0; i < curLevelObjectData.length; ++i ) {
         let ddd = v2MulAdd(newState.playerPos, curLevelObjectData[i].slice(1), -1);
         let dot = v2Dot(ddd, ddd);
+        if(curLevelObjectData[i][0] == 1) {
+            if(newState.playerEndState == PlayerEndState.Won) {
+                playerVel = v2MulAdd([0,0], playerVel, 0.8);
+            }
+            if(newState.canBeDone && dot < 2*2) {
+                newState.playerEndState = PlayerEndState.Won;
+            }
+        }
         if(!curLevelObjectData[i][0]) {
             if(dot < 4*4) {
                 curLevelObjectData[i][1] += ddd[0] * Math.min(1, .5 / dot);
@@ -276,14 +284,6 @@ export let tickGameState = (oldState: GameState): GameState => {
             if(dot < 2) {
                 curLevelObjectData.splice(i, 1);
                 i--;
-            }
-        }
-        if(curLevelObjectData[i][0] == 1) {
-            if(playerEndState == PlayerEndState.Won) {
-                playerVel = v2MulAdd([0,0], playerVel, 0.8);
-            }
-            if(newState.canBeDone && dot < 2*2) {
-                playerEndState = PlayerEndState.Won;
             }
         }
     }

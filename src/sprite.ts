@@ -53,7 +53,7 @@ let animData: any = [
 
 let spriteRenderers = [
     ([ _, radius, x, y ]:any) => {
-        c.fillStyle = '#700';
+        c.fillStyle = '#f00';
         c.beginPath();
         c.arc(x, y, radius, 0, 2*Math.PI);
         c.fill();
@@ -66,7 +66,7 @@ let spriteRenderers = [
         c.stroke();
     },
     ([ _, fill, w, h, x, y ]:any) => {
-        c.fillStyle = fill ? '#700' : '#000';
+        c.fillStyle = fill ? '#f00' : '#000';
         c.fillRect(x, y, w, h);
     },
 ];
@@ -102,7 +102,7 @@ export let tickSprite = (state: SpriteState): void => {
 };
 
 export let renderSprite = (state: GameState): void => {
-    c.strokeStyle = '#700';
+    c.strokeStyle = '#f00';
     c.lineCap = 'round';
 
     for(let layerIdx = 0; layerIdx < animData.length; ++layerIdx) {

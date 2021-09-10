@@ -1,5 +1,5 @@
 import { Bool, globalKeysDown, KeyCode, TICK_MS } from './globals';
-import { GameState, lerpGameState, newGameState, tickGameState } from "./state";
+import { GameState, lerpGameState, newGameState, PlayerEndState, tickGameState } from "./state";
 import { initRender, loadLevel, renderState } from "./render";
 import { tickSprite } from './sprite';
 
@@ -29,12 +29,12 @@ let frame = () => {
     }
 
     if( curState.fade < 0  ) {
-        if( curState.canBeDone > 0 ) curLevel++;
+        if( curState.playerEndState == PlayerEndState.Won ) curLevel++;
         curState = prevState = newGameState();
         loadLevel(curLevel);
     }
 
-    renderState(lerpGameState(prevState, curState, accTime / TICK_MS));
+    renderState(curLevel, lerpGameState(prevState, curState, accTime / TICK_MS));
 };
 
 initRender();

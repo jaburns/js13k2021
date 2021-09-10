@@ -3,11 +3,11 @@ declare const __LEVELS_JS__: any;
 export const TICK_MS = 33;
 
 export const enum KeyCode {
-    Left = 'L',
-    Up = 'U',
-    Right = 'R',
-    Down = 'D',
-    Space = 'Space',
+    Left = 37,
+    Up = 38,
+    Right = 39,
+    Down = 40,
+    Enter = 13,
 }
 
 export let curLevelObjectData: any;
@@ -17,8 +17,8 @@ export let loadLevelData = (idx: number) => {
 };
 
 export let globalKeysDown: {[keyCode: string]: Bool} = {};
-document.onkeydown = e => e.repeat || (globalKeysDown[e.code] = globalKeysDown[e.code[5]] = Bool.True);
-document.onkeyup = e => globalKeysDown[e.code] = globalKeysDown[e.code[5]] = Bool.False;
+document.onkeydown = e => e.repeat || (globalKeysDown[e.which] = Bool.True);
+document.onkeyup = e => globalKeysDown[e.which] = Bool.False;
 
 export const enum Bool { False, True }
 

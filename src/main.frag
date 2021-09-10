@@ -1,4 +1,5 @@
 uniform sampler2D T;
+uniform sampler2D S;
 uniform vec4 t;
 uniform vec4 s;
 
@@ -75,21 +76,22 @@ void main() {
     if( t.z == 0.0 ) {
         gl_FragColor = sampleWorld(t.xy, .0001);
     } else {
-        vec2 worldPos = (gl_FragCoord.xy - (0.5*vec2(k_fullWidth,k_fullHeight)));
+        vec2 worldPos = (gl_FragCoord.xy - (0.5*vec2(k_fullWidth,k_fullHeight))),
+             uv = gl_FragCoord.xy/vec2(k_fullWidth,k_fullHeight),
+             worldPosBg;
+        uv.y = 1.0 - uv.y;
         worldPos.y *= -1.0;
-        vec2 worldPosZ = .2*worldPos + .2*t.xy;
+        worldPosBg = .2*worldPos + .2*t.xy;
         worldPos = worldPos / t.z / k_baseScale + t.xy;
 
-        vec2 uv = gl_FragCoord.xy/vec2(k_fullWidth,k_fullHeight);
-        uv.y = 1.0 - uv.y;
-        vec4 canvasSample = texture2D(T, uv);
-        float characterAmount = canvasSample.r <= .48 ? canvasSample.r / .48 : 0.;
+        vec4 itemCanvasSample = texture2D(T, uv),
+             playerCanvasSample = texture2D(S, uv),
+             world = sampleWorld(worldPos, .5 / t.z / k_baseScale);
 
-        vec4 world = sampleWorld(worldPos, .5 / t.z / k_baseScale);
+        vec3 color = vec3(0);
 
         // ----- World color ---------------
 
-        vec3 worldColor = vec3(1,0,1);
         if( world.w > 0.0 ) {
             float edge = pow(max(0.,1.+.5*world.z),3.);
             float x = smoothstep(.45,.55,noise(
@@ -97,48 +99,38 @@ void main() {
                     ? .05*worldPos + .1*vec2(world.y,-world.x)*edge + .1*world.xy*edge
                     : .05*worldPos
             ));
-            vec3 cc = vec3(.5,1,.8);
-            worldColor = mix(.8*cc,cc,x);
-            worldColor *= .25+.5*(1.-edge);
+            const vec3 i_cc = vec3(.5,1,.8);
+            color = mix(.8*i_cc,i_cc,x);
+            color *= .25+.5*(1.-edge);
         }
-
-        // ----- Black hole / planet ---------------
-
-        //const vec2 i_PLANET_POS = vec2(110.0, -8.0);
-        //const float i_PLANET_R0 = 2.0;
-        //const float i_PLANET_R1 = 10.0;
-        //if( length(worldPos - i_PLANET_POS) < i_PLANET_R0 ) {
-        //    world.w = 1.0;
-        //}
-        //float dd = (length(worldPos - i_PLANET_POS) - i_PLANET_R0) / (i_PLANET_R1 - i_PLANET_R0);
-        //if( world.w < 0.1 && dd <= 1.0 ) {
-        //    world.w = 0.3 * (1.0 - dd);
-        //}
 
         // ----- Background color ---------------
 
-        vec3 bg =
-            vec3(1,.9,.7) * smoothstep(.73,.9, noise(0.1 * worldPosZ)) +
-            vec3(.7,.9,1) * smoothstep(.73,.9, noise(0.1 * worldPosZ+9.)) +
-            vec3(.12,.08,.12) * noise(.0015 * worldPosZ+5.);
+        color = mix(
+            (
+                vec3(1,.9,.7) * smoothstep(.73,.9, noise(0.1 * worldPosBg)) +
+                vec3(.7,.9,1) * smoothstep(.73,.9, noise(0.1 * worldPosBg+9.)) +
+                vec3(.12,.08,.12) * noise(.0015 * worldPosBg+5.)
+            ),
+            color,
+            world.w
+        );
+
+        // ----- Item color ---------------
+        
+        if( itemCanvasSample.r > .02 ) {
+            color += vec3(0,.5,1) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
+        } else if( itemCanvasSample.r > .01 ) {
+            color += (s.w > 0.5 ? vec3(0,1,0) : vec3(1,0,0)) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
+        }
+
+        // ----- Player color ---------------
+
+        float playerAmount = playerCanvasSample.r;
+        color += vec3(playerAmount) + vec3(1,1,.5) * pow(.5*max(0.,2.-length(worldPos - s.xy)),2.75+.25*sin(.3*t.w));
 
         // --------------------------------------
-
-        // Player/glow/final color
-        vec3 player = vec3(1);
-        vec2 dd = worldPos - s.xy;
-        vec3 glow = vec3(1,1,.5) * pow(.5*max(0.,2.-length(dd)),2.75+.25*sin(.3*t.w));
-        vec3 color = glow + mix(mix(bg, worldColor, world.w), player, characterAmount);
-
-        // Draw items
-        if( canvasSample.r > 0.5 ) {
-            if( canvasSample.r < 0.51 ) {
-                color += (s.w > 0.5 ? vec3(0,1,0) : vec3(1,0,0)) * max(0.,1.-length(2.*canvasSample.gb-1.));
-            } else {
-                color += vec3(0,.5,1) * max(0.,1.-length(2.*canvasSample.gb-1.));
-            }
-        }
        
-        gl_FragColor = vec4(color *s.z, 1);
+        gl_FragColor = vec4(min(vec3(1),color) * s.z, 1);
     }
 }

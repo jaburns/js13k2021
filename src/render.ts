@@ -1,7 +1,7 @@
 import {
     gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_TEXTURE_MAG_FILTER, gl_TEXTURE_WRAP_S, gl_TEXTURE_WRAP_T, 
     gl_UNSIGNED_BYTE, gl_RGBA, gl_CLAMP_TO_EDGE, gl_NEAREST, gl_ARRAY_BUFFER, gl_STATIC_DRAW, gl_VERTEX_SHADER, 
-    gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0 
+    gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0, gl_TEXTURE1 
 } from "./glConsts";
 import { renderSprite } from './sprite';
 import { curLevelObjectData, loadLevelData, Vec2 } from './globals';
@@ -16,7 +16,8 @@ declare const k_fullWidth: number;
 declare const k_fullHeight: number;
 declare const k_baseScale: number;
 
-let canTex: WebGLTexture;
+let canTexS: WebGLTexture;
+let canTexT: WebGLTexture;
 let sampleTex: WebGLTexture;
 let sampleFb: WebGLFramebuffer;
 let fullScreenTriVertBuffer: WebGLBuffer;
@@ -29,13 +30,29 @@ let blueGrad = c.createLinearGradient(0, -1, 0, 1);
 blueGrad.addColorStop(0, "#000");
 blueGrad.addColorStop(1, "#00f");
 
+// let messages = [
+//     'Use the arrows',
+//     'Use the ramp',
+//     'Use momentum',
+//     'Use the down key',
+//     'Use the black hole',
+// ];
+
 export let worldSampleResult = new Float32Array(4);
 
 export let initRender = (): void => {
     g.getExtension('OES_texture_float');
 
-    canTex = g.createTexture()!;
-    g.bindTexture(gl_TEXTURE_2D, canTex);
+    canTexS = g.createTexture()!;
+    g.bindTexture(gl_TEXTURE_2D, canTexS);
+    g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, k_fullWidth, k_fullHeight, 0, gl_RGBA, gl_UNSIGNED_BYTE, null);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_NEAREST);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_NEAREST); 
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_CLAMP_TO_EDGE);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_CLAMP_TO_EDGE);
+
+    canTexT = g.createTexture()!;
+    g.bindTexture(gl_TEXTURE_2D, canTexT);
     g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, k_fullWidth, k_fullHeight, 0, gl_RGBA, gl_UNSIGNED_BYTE, null);
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_NEAREST);
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_NEAREST); 
@@ -69,7 +86,7 @@ export let loadLevel = (level: number): void => {
 
     g.shaderSource( vs, main_vert );
     g.compileShader( vs );
-    g.shaderSource( fs, 'precision highp float;'+main_frag.replace(new RegExp('M'+level, 'g'),'M') );
+    g.shaderSource( fs, 'precision highp float;'+main_frag.replace('M'+level,'M') );
     g.compileShader( fs );
 
     if( DEBUG )
@@ -90,7 +107,6 @@ export let loadLevel = (level: number): void => {
     g.deleteShader( vs );
 
     g.useProgram(shader);
-    g.activeTexture(gl_TEXTURE0);
 };
 
 export let requestWorldSample = (pos: Vec2): void => {
@@ -110,8 +126,9 @@ export let requestWorldSample = (pos: Vec2): void => {
 export let readWorldSample = (): void =>
     g.readPixels(0, 0, 1, 1, gl_RGBA, gl_FLOAT, worldSampleResult);
 
-export let renderState = (state: GameState): void => {
-    c.clearRect(0,0,k_fullWidth, k_fullHeight);
+export let renderState = (curLevel: number, state: GameState): void => {
+    g.bindFramebuffer(gl_FRAMEBUFFER, null);
+
     c.fillStyle='#000';
     c.fillRect(0,0,k_fullWidth, k_fullHeight);
 
@@ -133,8 +150,9 @@ export let renderState = (state: GameState): void => {
         );
         c.scale(k_baseScale * state.cameraZoom * objScale, k_baseScale * state.cameraZoom * objScale);
 
-        let red = curLevelObjectData[i][0] ? 0 : 3;
-        c.fillStyle = `#${(128+red).toString(16)}0000`;
+        let red: any = curLevelObjectData[i][0] ? 3 : 6;
+        red = red.toString(16);
+        c.fillStyle = `#${(red.length < 2 ? '0' : '') + red}0000`;
         c.fillRect(-1.1,-1.1,2.2,2.2);
         c.fillStyle = greenGrad;
         c.fillRect(-1.1,-1.1,2.2,2.2);
@@ -150,17 +168,25 @@ export let renderState = (state: GameState): void => {
         c.restore();
     }
 
+    g.activeTexture(gl_TEXTURE0);
+    g.bindTexture(gl_TEXTURE_2D, canTexT);
+    g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, gl_RGBA, gl_UNSIGNED_BYTE, C1);
+
     c.globalCompositeOperation = op;
+
+    c.fillStyle='#000';
+    c.fillRect(0,0,k_fullWidth, k_fullHeight);
 
     renderSprite(state);
 
-    g.bindFramebuffer(gl_FRAMEBUFFER, null);
-
-    g.bindTexture(gl_TEXTURE_2D, canTex);
+    g.activeTexture(gl_TEXTURE1);
+    g.bindTexture(gl_TEXTURE_2D, canTexS);
     g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, gl_RGBA, gl_UNSIGNED_BYTE, C1);
+
     g.uniform1i(g.getUniformLocation(shader, 'T'), 0);
+    g.uniform1i(g.getUniformLocation(shader, 'S'), 1);
     g.uniform4f(g.getUniformLocation(shader, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, state.tick);
-    g.uniform4f(g.getUniformLocation(shader, 's'), state.playerPos[0], state.playerPos[1], state.fade, state.canBeDone ? 1 : 0);
+    g.uniform4f(g.getUniformLocation(shader, 's'), state.playerPos[0], state.playerPos[1], state.fade, state.canBeDone);
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     let posLoc = g.getAttribLocation( shader, 'a' );
