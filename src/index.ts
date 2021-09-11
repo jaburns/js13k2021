@@ -2,6 +2,7 @@ import { Bool, globalKeysDown, KeyCode, TICK_MS } from './globals';
 import { GameState, lerpGameState, newGameState, PlayerEndState, tickGameState } from "./state";
 import { initRender, loadLevel, renderState } from "./render";
 import { tickSprite } from './sprite';
+import {startAudio} from './synth';
 
 declare const DEBUG: boolean;
 
@@ -43,3 +44,5 @@ initRender();
 curState = prevState = newGameState();
 loadLevel(curLevel);
 frame();
+
+window.onclick = () => { startAudio(); }

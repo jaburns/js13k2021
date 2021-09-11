@@ -1,4 +1,4 @@
-import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData } from "./globals";
+import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, zzfx } from "./globals";
 import { readWorldSample, requestWorldSample, worldSampleResult } from "./render";
 import { SpriteState } from "./sprite";
 
@@ -146,6 +146,7 @@ export let tickGameState = (oldState: GameState): GameState => {
                 if( globalKeysDown[KeyCode.Up] && playerCanJump ) {
                     playerVel[1] -= k_jumpSpeed;
                     playerCanJump = 0;
+                    zzfx(...[1.43,,1487,,.03,.12,,.61,45,2.5,,.03,,.7,,.2,.05]);
                 }
 
                 if( globalKeysDown[KeyCode.Down] && !stompKeyDown && playerVel[1] < k_stompSpeed ) {
