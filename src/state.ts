@@ -136,7 +136,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
             if( globalKeysDown[KeyCode.Right] ) fx(), newState.selectedLevel++;
             if( globalKeysDown[KeyCode.Up] ) fx(), newState.selectedLevel-=7;
             if( globalKeysDown[KeyCode.Down] ) fx(), newState.selectedLevel+=7;
-            newState.selectedLevel = Math.max(0,Math.min(Math.min(27,saveStateLen),newState.selectedLevel));
+            newState.selectedLevel = Math.max(0,Math.min(Math.min(20,saveStateLen),newState.selectedLevel));
             if( globalKeysDown[KeyCode.Enter] ) {
                 zzfx(...[2,0,1,.1,.3,1,3,.6,,.6,30+5*(curLevel%2),,.35,,,,.18,.78,.1,.46]); // Music 200
                 newState.playerEndState = PlayerEndState.Won;

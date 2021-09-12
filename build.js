@@ -78,8 +78,8 @@ const generateShaderFile = () =>
     });
 
     let noRenames = ['main', 'M'];
-    for( let i = 0; i < 10; ++i ) {
-        noRenames.push('M' + i);
+    for( let i = 0; i < 36; ++i ) {
+        noRenames.push('M' + i.toString(36).toUpperCase());
     }
 
     run( MONO_RUN + 'tools/shader_minifier.exe --no-renaming-list '+noRenames.join(',')+' --format js -o build/shaders.js --preserve-externals '+(DEBUG ? '--preserve-all-globals' : '')+' shadersTmp/*' );
@@ -132,7 +132,7 @@ const compileLevelShader = (levelObjects, idx) => {
     };
 
     const lines = [
-        `vec2 M${idx}(vec2 p) {`,
+        `vec2 M${idx.toString(36).toUpperCase()}(vec2 p) {`,
         '    vec2 d = vec2(-10000);'
     ];
 

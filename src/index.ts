@@ -45,7 +45,7 @@ let frame = () => {
     setAudioFade(curState.fade);
 
     if( curState.fade < 0 ) {
-        let selectedLevel = Math.min(27,saveState.length);
+        let selectedLevel = Math.min(20,saveState.length);
         saveStateLen = saveState.length;
         if( curState.playerEndState == PlayerEndState.Quit ) {
             selectedLevel = curLevel - 1;
@@ -57,7 +57,7 @@ let frame = () => {
                 window.localStorage.setItem('galaxyrider', JSON.stringify(saveState));
                 curLevel++;
             }
-            curLevel %= 28;
+            curLevel %= 22;
         }
         curState = prevState = newGameState(curLevel, selectedLevel);
         prevNow = NaN;
@@ -72,7 +72,7 @@ if( got ) {
 }
 
 initRender();
-curState = prevState = newGameState(curLevel, Math.min(27,saveStateLen = saveState.length));
+curState = prevState = newGameState(curLevel, Math.min(20,saveStateLen = saveState.length));
 loadLevel(curLevel);
 frame();
 

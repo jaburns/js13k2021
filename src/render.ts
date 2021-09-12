@@ -35,12 +35,18 @@ let messages = [
     'Use the arrows',
     'Use the ramp',
     'Use momentum',
-    'Press down to become heavy',
-    'Use the black hole',
+    'Press down to become heavy','','','',
+    'Use the black hole','','','','','','',
+    'Use the rubber block',
 ];
 
-
-let hueForLevel = (level: number): number => (.85+level/3.7)%1;
+let hueForLevel = (level: number): number => {
+    if( level == 0 ) level = 1;
+    level -= 1;
+    let world = (level / 7)|0;
+    level %= 7;
+    return ( 0.85 - 0.25*world + 0.1*(level/7) ) % 1;
+};
 
 let hue2rgb = (p: number, q: number, t: number) => {
     if(t < 0) t += 1;
@@ -115,7 +121,7 @@ export let loadLevel = (level: number): void => {
 
     g.shaderSource( vs, main_vert );
     g.compileShader( vs );
-    g.shaderSource( fs, 'precision highp float;'+main_frag.replace('M'+level,'M') );
+    g.shaderSource( fs, 'precision highp float;'+main_frag.replace('M'+level.toString(36).toUpperCase(),'M') );
     g.compileShader( fs );
 
     if( DEBUG )
@@ -248,11 +254,11 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
         c.fillText('RIDER', 21*155, 21*23);
 
         c.font = '84px Arial';
-        c.fillText('Use Arrows and Enter to Select Level', 21*155, 21*75);
+        c.fillText('Use Arrows and Enter to Select Level', 21*155, 21*72);
 
         c.restore();
 
-        for( let i = 0; i < 28; ++i ) {
+        for( let i = 0; i < 21; ++i ) {
             c.save();
             c.translate(
                 k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
@@ -266,7 +272,7 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
             let col = i % 7;
             let row = (i / 7) | 0;
             let x = 108+col*14;
-            let y = 31+row*10;
+            let y = 33+row*10;
             c.strokeRect(21*x, 21*y, 21*12, 21*8);
 
             c.font = (i==state.selectedLevel ? 'bold ' : '')+'63px Courier';
@@ -297,7 +303,7 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
     g.uniform1i(g.getUniformLocation(shader, 'S'), 1);
     g.uniform4f(g.getUniformLocation(shader, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, state.tick);
     g.uniform4f(g.getUniformLocation(shader, 's'), state.playerPos[0], state.playerPos[1], state.fade, state.canBeDone);
-    g.uniform4fv(g.getUniformLocation(shader, 'r'), hslToRgb(hueForLevel(curLevel),.4,.5));
+    g.uniform4fv(g.getUniformLocation(shader, 'r'), hslToRgb(hueForLevel(curLevel),.6,.6));
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     let posLoc = g.getAttribLocation( shader, 'a' );
