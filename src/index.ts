@@ -42,11 +42,11 @@ let frame = () => {
 
     if( curState.fade < 0 ) {
         let selectedLevel = Math.min(27,saveState.length);
+        saveStateLen = saveState.length;
         if( curState.playerEndState == PlayerEndState.Quit ) {
             selectedLevel = curLevel - 1;
             curLevel = 0;
         } else if( !curLevel ) {
-            saveStateLen = saveState.length;
             curLevel = curState.selectedLevel + 1;
         } else {
             if( curState.playerEndState == PlayerEndState.Won ) {
