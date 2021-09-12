@@ -52,7 +52,7 @@ export let ticksToTime = (ticks: number): string => {
     let centis = (Math.max(0,(ticks|0) - 10) * k_tickMillis) / 10;
     let secs = (centis / 100)|0;
     let centiString = ((centis|0)%100).toString();
-    return secs + ':' + (centiString.length < 2 ? '0' : '') + centiString;
+    return secs + '.' + (centiString.length < 2 ? '0' : '') + centiString;
 };
 
 export let v2Reflect = (a: Vec2, norm: Vec2, normFactor: number, tanFactor: number): Vec2 => {

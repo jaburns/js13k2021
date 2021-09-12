@@ -215,11 +215,15 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
             k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
             k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
         );
-        c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
+        c.scale(state.cameraZoom, state.cameraZoom);
 
+        c.strokeStyle = '#030';
+        c.lineWidth = 8;
+        c.lineJoin = 'round';
         c.fillStyle = '#0f0';
-        c.font = 'italic bold 2px Arial';
-        c.fillText(messages[curLevel], -15, -9);
+        c.font = 'italic bold 42px Arial';
+        c.strokeText(messages[curLevel], -315, -189);
+        c.fillText(messages[curLevel], -315, -189);
 
         c.restore();
     }
@@ -230,21 +234,21 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
             k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
             k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
         );
-        c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
+        c.scale(state.cameraZoom, state.cameraZoom);
 
         c.fillStyle = '#0f0';
         c.strokeStyle = '#030';
-        c.lineWidth = 1;
+        c.lineWidth = 25;
         c.lineJoin = 'round';
         c.textAlign = 'center';
-        c.font = 'italic bold 18px Arial';
-        c.strokeText('GALAXY', 155, 8);
-        c.strokeText('RIDER', 155, 23);
-        c.fillText('GALAXY', 155, 8);
-        c.fillText('RIDER', 155, 23);
+        c.font = 'italic bold 378px Arial';
+        c.strokeText('GALAXY', 21*155, 21*8);
+        c.strokeText('RIDER', 21*155, 21*23);
+        c.fillText('GALAXY', 21*155, 21*8);
+        c.fillText('RIDER', 21*155, 21*23);
 
-        c.font = '4px Arial';
-        c.fillText('Use Arrows and Enter to Select Level', 155, 75);
+        c.font = '84px Arial';
+        c.fillText('Use Arrows and Enter to Select Level', 21*155, 21*75);
 
         c.restore();
 
@@ -254,24 +258,24 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
                 k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
                 k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
             );
-            c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
+            c.scale(state.cameraZoom, state.cameraZoom);
 
             c.fillStyle = c.strokeStyle = i==state.selectedLevel ? '#00f' : i > saveState.length ? '#003' : '#007';
 
-            c.lineWidth = i==state.selectedLevel ? 1 : .25;
+            c.lineWidth = 21*(i==state.selectedLevel ? 1 : .25);
             let col = i % 7;
             let row = (i / 7) | 0;
             let x = 108+col*14;
             let y = 31+row*10;
-            c.strokeRect(x, y, 12, 8);
+            c.strokeRect(21*x, 21*y, 21*12, 21*8);
 
-            c.font = (i==state.selectedLevel ? 'bold ' : '')+'3px Courier';
+            c.font = (i==state.selectedLevel ? 'bold ' : '')+'63px Courier';
             c.textAlign = 'center';
-            c.fillText(i as any + 1, x+6, y+3);
-            c.font = 'bold 2.5px Courier';
+            c.fillText(i as any + 1, 21*(x+6), 21*(y+3));
+            c.font = 'bold 53px Courier';
 
             if( i < saveState.length ) {
-                c.fillText(ticksToTime(saveState[i]), x+6, y+7);
+                c.fillText(ticksToTime(saveState[i]), 21*(x+6), 21*(y+7));
             }
 
             c.restore();
