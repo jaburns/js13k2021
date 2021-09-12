@@ -1,11 +1,7 @@
-import {zzfx} from "./globals";
-
 const s_audioBufferSize: number = 1024;
 const s_audioSampleRate: number = 22050;
-const s_tempo: number = 0.45;
 
 let _sampleOffset = 0;
-let _songPos: number;
 
 let biquadLPF = () =>
 {
@@ -50,37 +46,6 @@ let biquadLPF = () =>
     };
 };
 
-let clamp01 = (x: number) =>
-    x < 0 ? 0 : x > 1 ? 1 : x;
-let clamp11 = (x: number) =>
-    x < -1 ? -1 : x > 1 ? 1 : x;
-
-let smoothstep = (edge0: number, edge1: number, x: number) =>
-{
-    x = clamp01((x - edge0) / (edge1 - edge0));
-    return x * x * (3 - 2 * x);
-};
-
-let saw = ( t: number ) =>
-    1 - 2 * ((t % (2 * Math.PI)) / (2 * Math.PI));
-
-let tri = ( t: number ) =>
-    1 - 2*Math.abs(1 - 2 * ((t % (2 * Math.PI)) / (2 * Math.PI)));
-
-let sqr = ( t: number ) =>
-    saw(t) > 0.5 ? 1 : -1;
-
-let sym = ( time: number, tempo: number, a: number, b: number ) =>
-    a * (1-2*Math.random()) * Math.exp( -b*(time%tempo) );
-
-let taylorSquareWave = ( x: number, i: number, imax: number ): number =>
-{
-    let result = 0;
-    for( ; i <= imax; i += 2 )
-        result += 4 / Math.PI / i * Math.sin( i * x );
-    return result;
-};
-
 let mainLpf = biquadLPF();
 
 let bufNoise = new Float32Array( s_audioBufferSize );
@@ -101,7 +66,6 @@ let audioTick = ( y: Float32Array ) =>
         bufBass[i] =  0.75*Math.sin( 90 * t * 2 * Math.PI                      ) * Math.sin( 0.1 * t );
         bufBass[i] += 0.75*Math.sin( 90 * t * 2 * Math.PI * (Math.pow(2,2/12)) ) * Math.cos( 0.19 * t );
         bufBass[i] += 0.75*Math.cos( 90 * t * 2 * Math.PI * (Math.pow(2,5/12)) ) * Math.sin( 0.39 * t );
-        //bufBass[i] += 0.5*Math.sin( 0.25 * 110 * t * 2 * Math.PI                     ); // * Math.cos( 0.07 * t );
     }
 
     mainLpf( 150 + 25 * Math.sin(0.00002*_sampleOffset), bufNoise, bufNoiseOut );
@@ -111,9 +75,6 @@ let audioTick = ( y: Float32Array ) =>
     }
 
     _sampleOffset += s_audioBufferSize;
-
-    //if( (_sampleOffset / s_audioBufferSize) % 128 == 1 )
-    //    zzfx(...[1.03,0,130 * Math.pow(2,(2*Math.floor(Math.random()*3)/12)),.05,1.29,.39,1,.98,,,,,.32,,,,,.55,.03,.13]);
 };
 
 export let startAudio = () =>

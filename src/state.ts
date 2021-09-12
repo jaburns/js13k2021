@@ -157,7 +157,7 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
                 }
 
                 if( globalKeysDown[KeyCode.Down] && !stompKeyDown ) {
-                    zzfx(...[,,359,.05,,.05,1,2.62,-0.5,,,,,,39,,,,,.06]); // Random 295
+                    zzfx(...[1.56,.1,367,.01,.07,.08,1,.5,-4,,,,,,,,.09,0,.05]); // Shoot 441
                     if( playerVel[1] < k_stompSpeed ) {
                         playerVel[1] = k_stompSpeed;
                     }

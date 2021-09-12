@@ -17,7 +17,10 @@ export let loadLevelData = (idx: number) => {
 };
 
 export let globalKeysDown: {[keyCode: string]: Bool} = {};
-document.onkeydown = e => e.repeat || (globalKeysDown[e.which] = Bool.True);
+document.onkeydown = e => {
+    if( ([37,38,39,40]).indexOf(e.which) >= 0 ) e.preventDefault();
+    if( !e.repeat ) globalKeysDown[e.which] = Bool.True;
+};
 document.onkeyup = e => globalKeysDown[e.which] = Bool.False;
 
 export const enum Bool { False, True }
@@ -52,6 +55,7 @@ export let v2Reflect = (a: Vec2, norm: Vec2, normFactor: number, tanFactor: numb
 };
 
 // ZzFXMicro - Zuper Zmall Zound Zynth - v1.1.8 ~ 884 bytes minified
+// https://github.com/KilledByAPixel/ZzFX
 declare const webkitAudioContext: any;
 let zzfxX:any
 let zzfxV:number=.3    // volume

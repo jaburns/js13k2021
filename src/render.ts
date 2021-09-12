@@ -217,7 +217,7 @@ export let renderState = (curLevel: number, state: GameState): void => {
         c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
 
         c.fillStyle = '#0f0';
-        c.font = '2px sans-serif';
+        c.font = '2px Arial';
         c.fillText(messages[curLevel], -15, -9);
 
         c.restore();
