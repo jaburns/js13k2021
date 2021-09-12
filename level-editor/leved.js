@@ -89,10 +89,13 @@ const renderRect = obj => {
 };
 
 const renderObject = obj => {
-    ctx.fillStyle = obj[1] == 1 ? '#000' : obj[1] == 2 ? '#0ff' : '#0f0';
-    if( obj[0] === 0 ) renderCircle(obj);
-    if( obj[0] === 1 ) renderCapsule(obj);
-    if( obj[0] === 2 ) renderRect(obj);
+    ctx.fillStyle = obj[0] < 0 ? '#f00' : obj[1] == 1 ? '#000' : obj[1] == 2 ? '#0ff' : '#0f0';
+
+    let obj0 = obj[0] < 0 ? -1 - obj[0] : obj[0];
+
+    if( obj0 === 0 ) renderCircle(obj);
+    if( obj0 === 1 ) renderCapsule(obj);
+    if( obj0 === 2 ) renderRect(obj);
     if( obj[0] === 3 && obj[1] === 2 ) renderBlackHole(obj);
 };
 

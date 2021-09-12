@@ -90,7 +90,7 @@ const generateShaderFile = () =>
         .map( x => x.replace(/^var/, 'export let'))
 
     for( let i = 0; i < shaderLines.length; ++i ){
-        if( shaderLines[i].indexOf('float M(') >= 0 ) {
+        if( shaderLines[i].indexOf('vec2 M(') >= 0 ) {
             shaderLines.splice(i, 4);
             break;
         }
@@ -132,17 +132,25 @@ const compileLevelShader = (levelObjects, idx) => {
     };
 
     const lines = [
-        `float M${idx}(vec2 p) {`,
-        '    float d = -10000.;'
+        `vec2 M${idx}(vec2 p) {`,
+        '    vec2 d = vec2(-10000);'
     ];
+
+    let comp = 'x';
 
     levelObjects.sort((x,y) => x[1] - y[1]);
     levelObjects.forEach(obj => {
         if( obj[0] === 3 ) return; // 3 is item
-        if( obj[1] === 1 ) {
-            lines.push(`    d = roundMerge(d, ${shapeFn(obj)});`);
+        if( obj[0] < 0 ) {
+            obj[0] = -1 - obj[0];
+            comp = 'y';
         } else {
-            lines.push(`    d = max(d, -${shapeFn(obj)});`);
+            comp = 'x';
+        }
+        if( obj[1] === 1 ) {
+            lines.push(`    d.${comp} = roundMerge(d.${comp}, ${shapeFn(obj)});`);
+        } else {
+            lines.push(`    d.${comp} = max(d.${comp}, -${shapeFn(obj)});`);
         }
     });
 

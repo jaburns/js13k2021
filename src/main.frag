@@ -60,15 +60,17 @@ float sdCapsule(vec2 p, float x0, float y0, float ra, float x1, float y1, float 
            k > c.x ? sqrt(h*(n+1.0-2.0*q.y)) - rb :
                      dot(c,q)                - ra;
 }
-float M(vec2 p){return p;} 
+vec2 M(vec2 p){return p;} 
 __LEVELS_GLSL__
-vec4 sampleWorld(vec2 p, float delta) { // Result: xy -> normal ; z -> dist ; w -> on/off
+float mc(vec2 p){vec2 m=M(p);return min(m.x,m.y);}
+vec4 sampleWorld(vec2 p, float delta) { // Result: xy -> normal ; z -> dist ; w -> on/off, negative -> rubber
     vec2 eps = vec2(delta, 0);
-    float a = M(p - eps.xy), b = M(p + eps.xy), c = M(p - eps.yx), d = M(p + eps.yx);
+    vec2 center = M(p);
+    float a = mc(p - eps.xy), b = mc(p + eps.xy), c = mc(p - eps.yx), d = mc(p + eps.yx);
     return vec4(
         normalize(vec2(b - a, d - c)),
-        M(p),
-        .25*(float(a<=0.)+float(b<=0.)+float(c<=0.)+float(d<=0.))
+        min(center.x, center.y),
+        .25*(float(a<=0.)+float(b<=0.)+float(c<=0.)+float(d<=0.)) * (center.y < center.x ? -1. : 1.)
     );
 }
 
@@ -87,8 +89,9 @@ void main() {
     periodicNoise = 0;
 
     if( t.z == 0.0 ) {
+        vec2 samp = M(t.xy);
         gl_FragColor = gl_FragCoord.x < 1.
-            ? sampleWorld(t.xy, .01)
+            ? vec4(sampleWorld(t.xy, .01).xyz, samp.y<samp.x ? 1. : 0.)
             : sampleWorld(t.xy + vec2(0,.5), .01);
     } else {
         vec2 worldPos = (gl_FragCoord.xy - (0.5*vec2(k_fullWidth,k_fullHeight))),
@@ -107,25 +110,29 @@ void main() {
 
         // ----- Background+world color ---------------
 
-        if( world.w > 0.0 ) {
+        if( world.w != 0.0 ) {
+
             float edge = pow(max(0.,1.+.5*world.z),3.);
+            if( world.w < 0.0 ) {
+                color = -world.w * (.1+.25*edge) * vec3(.5);
+            } else {
+                vec2 v = vec2(.3,0.);
+                vec2 p = edge > .01 ? worldPosBg + 20.*world.xy*edge : worldPosBg;
+                color = 
+                    .25 * sampleBackground(.73,.9, p + v.xy) +
+                    .25 * sampleBackground(.73,.9, p - v.xy) +
+                    .25 * sampleBackground(.73,.9, p + v.yx) +
+                    .25 * sampleBackground(.73,.9, p - v.yx);
 
-            vec2 v = vec2(.3,0.);
-            vec2 p = edge > .01 ? worldPosBg + 20.*world.xy*edge : worldPosBg;
-            color = 
-                .25 * sampleBackground(.73,.9, p + v.xy) +
-                .25 * sampleBackground(.73,.9, p - v.xy) +
-                .25 * sampleBackground(.73,.9, p + v.yx) +
-                .25 * sampleBackground(.73,.9, p - v.yx);
+                vec2 p1 = edge > .01
+                    ? .05*worldPos + .2*vec2(world.y,-world.x)*edge
+                    : .05*worldPos;
 
-            vec2 p1 = edge > .01
-                ? .05*worldPos + .2*vec2(world.y,-world.x)*edge
-                : .05*worldPos;
+                float stripe = fract(2.*(sin(p1.x)+p1.y));
 
-            float stripe = fract(2.*(sin(p1.x)+p1.y));
-
-            vec3 baseColor = (.5+.5*smoothstep(.2,.3,stripe)*smoothstep(.8,.7,stripe))*r.rgb;
-            color += world.w * (.1+.5*edge)*baseColor;
+                vec3 baseColor = (.5+.5*smoothstep(.2,.3,stripe)*smoothstep(.8,.7,stripe))*r.rgb;
+                color += world.w * (.1+.5*edge)*baseColor;
+            }
         } else {
             color = sampleBackground(.73,.9,worldPosBg);
         }
@@ -157,25 +164,18 @@ void main() {
         float playerAmount = playerCanvasSample.r;
         color += vec3(playerAmount) + vec3(1,1,.5) * pow(.5*max(0.,2.-length(worldPos - s.xy)),2.75+.25*sin(.3*t.w));
 
-        // ----- Message color ---------------
+        // ----- Text color ---------------
 
         if( playerCanvasSample.b > 0. ) {
             color = clamp(color, 0., 1.);
         }
-
         color += (
             vec3(.3)+
             sampleBackground(.3,1.,worldPos+9.+0.05*t.w)
-        )
-        * (playerCanvasSample.g + .75*playerCanvasSample.b);
-    
+        ) * (playerCanvasSample.g + .75*playerCanvasSample.b);
         if(playerCanvasSample.b > 0. &&  playerCanvasSample.b < .5 ) {
             color = mix( color, (10.*playerCanvasSample.b)*i_PURPLE_SPACE, .5 );
         }
-       
-        // ----- Level select color ---------------
-
-        //color = mix(color, vec3(1), playerCanvasSample.b);
 
         // --------------------------------------
        

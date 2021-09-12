@@ -271,6 +271,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
 
             readWorldSample();
             norm = [worldSampleResult[0], worldSampleResult[1]];
+            let kind = worldSampleResult[3];
 
             if( playerCanJump || norm[1] < -0.1 ) {
                 if( worldSampleResult[2] < 1.5 ) {
@@ -280,24 +281,30 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                     if( playerCanJump > 0 ) playerCanJump--;
                 }
                 if( worldSampleResult[2] < 1.0 ) {
+                    
                     if( !playerCanJump ) {
                         if( playerLandedOnce ) {
-                            //zzfx(...[1.03,,100,,.03,.08,4,1.17,8.6,-0.4,,,,,,.1,,.78,.03,.45]);
-                            zzfx(...[2,,80,.01,.03,.18,1,.3,-0.2,-11.6,,,,,,,,,.01]); // Random 289
-                            //zzfx(...[1.48,,348,,,.4,3,2.1,,,,,,.6,9,.6,.04,,,.44]); // Explosion 193
+                            if( kind < .5 )
+                                zzfx(...[2,,80,.01,.03,.18,1,.3,-0.2,-11.6,,,,,,,,,.01]); // Random 289
                         } else {
                             playerLandedOnce = Bool.True;
                         }
                     }
-                    playerVel = v2Reflect(playerVel, norm, 0, 1);
+                    playerVel = v2Reflect(playerVel, norm, kind, 1);
                     newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
                     playerCanJump = k_lateJumpTicks;
+
+                    if( kind > .5 )
+                        zzfx(...[1.5,,355,.03,,.45,1,.9,,,120,.19,.06,.2,6.9,,,.9,.02]); // Powerup 445
                 }
             } else {
                 groundRot = radsLerp(newState.playerRot, 0, 0.25);
                 if( worldSampleResult[2] < 1.0 ) {
-                    playerVel = v2Reflect(playerVel, norm, 0, 1);
+                    playerVel = v2Reflect(playerVel, norm, kind, 1);
                     newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
+
+                    if( kind > .5 )
+                        zzfx(...[1.5,,355,.03,,.45,1,.9,,,120,.19,.06,.2,6.9,,,.9,.02]); // Powerup 445
                 }
             }
         }
