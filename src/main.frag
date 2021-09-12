@@ -11,6 +11,7 @@ float hash(vec2 p) {
     p = 17.*fract( p*.3183099+.1 );
     return fract( p.x*p.y*(p.x+p.y) );
 }
+int periodicNoise;
 float noiseFn(vec2 x) {
     vec2 i = floor(x);
     vec2 f = fract(x);
@@ -22,6 +23,7 @@ float noiseFn(vec2 x) {
     );
 }
 float noise(vec2 q) {
+    if(periodicNoise>0) q.x = .25*sin(q.x);
     mat2 m = mat2(.88,.48,-.48,.88);
     float f = .5*noiseFn( q *= 8. );
     f += .25*noiseFn( q = m*q*2.01 );
@@ -70,18 +72,20 @@ vec4 sampleWorld(vec2 p, float delta) { // Result: xy -> normal ; z -> dist ; w 
     );
 }
 
+const vec3 i_PURPLE_SPACE = vec3(.12,.08,.12);
 
 // ==================================================================================================
 // Main
 //
-vec3 sampleBackground(vec2 worldPosBg) {
-    return 
-        vec3(1,.9,.7) * smoothstep(.73,.9, noise(0.1 * worldPosBg)) +
-        vec3(.7,.9,1) * smoothstep(.73,.9, noise(0.1 * worldPosBg+9.)) +
-        vec3(.12,.08,.12) * noise(.0015 * worldPosBg+5.);
+vec3 sampleBackground(float a, float b, vec2 worldPosBg) {
+    return vec3(1,.9,.7) * smoothstep(a,b, noise(0.1 * worldPosBg)) +
+        vec3(.7,.9,1) * smoothstep(a,b, noise(0.1 * worldPosBg+9.)) +
+        i_PURPLE_SPACE * noise(.0015 * worldPosBg+5.);
 }
 
 void main() {
+    periodicNoise = 0;
+
     if( t.z == 0.0 ) {
         gl_FragColor = gl_FragCoord.x < 1.
             ? sampleWorld(t.xy, .01)
@@ -116,16 +120,28 @@ void main() {
 
         // ----- Background color ---------------
 
-        color = mix(sampleBackground(worldPosBg), color, world.w);
+        color = mix(sampleBackground(.73,.9,worldPosBg), color, world.w);
 
         // ----- Item color ---------------
-        
+
+        vec2 itemP = 2.*itemCanvasSample.gb-1.;
+        float itemD = length(itemP);
+        float itemR = max(0.,1.-itemD);
         if( itemCanvasSample.r > 25./255. ) {
-            color -= vec3(1) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
+            color += itemR * exp(-3.*itemD)*8. * i_PURPLE_SPACE;
+            if (s.w > 0.5) {
+                float amount = clamp((itemCanvasSample.r - 30./255.) / (30./255.), 0., 1.);
+                color += amount * itemR * exp(-10.*length(itemP))*5. * sampleBackground(0.,1.,8.*vec2(atan(itemP.y, itemP.x) + 0.05*t.w, 5.*(itemR - 0.05*t.w)));
+            }
         } else if( itemCanvasSample.r > 15./255. ) {
-            color += (s.w > 0.5 ? vec3(0,1,0) : vec3(1,0,0)) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
+            color -= pow(itemR,2.);
+            vec2 sampP = vec2(atan(itemP.y, itemP.x) + 0.05*t.w, 1.*(itemR - 0.01*t.w));
+            periodicNoise = 1;
+            vec3 samp = i_PURPLE_SPACE * mix(noise(sampP),noise(sampP+vec2(3.14/2.,0)),.5);
+            periodicNoise = 0;
+            color += (1.-exp(-5.*itemD)) * itemR * 10.*samp;
         } else if( itemCanvasSample.r > 5./255. ) {
-            color += vec3(0,.5,1) * max(0.,1.-length(2.*itemCanvasSample.gb-1.));
+            color += 10.*vec3(1,1,.5)*exp(-(8.+2.*sin(.5*t.w+(worldPos.x+worldPos.y)))*itemD);
         }
 
         // ----- Player color ---------------
@@ -135,7 +151,23 @@ void main() {
 
         // ----- Message color ---------------
 
-        color += 10.*sampleBackground(worldPosBg+t.w) * playerCanvasSample.g;
+        if( playerCanvasSample.b > 0. ) {
+            color = clamp(color, 0., 1.);
+        }
+
+        color += (
+            vec3(.3)+
+            sampleBackground(.3,1.,worldPos+9.+0.05*t.w)
+        )
+        * (playerCanvasSample.g + .75*playerCanvasSample.b);
+    
+        if(playerCanvasSample.b > 0. &&  playerCanvasSample.b < .5 ) {
+            color = mix( color, (10.*playerCanvasSample.b)*i_PURPLE_SPACE, .5 );
+        }
+       
+        // ----- Level select color ---------------
+
+        //color = mix(color, vec3(1), playerCanvasSample.b);
 
         // --------------------------------------
        

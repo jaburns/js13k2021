@@ -31,6 +31,7 @@ blueGrad.addColorStop(0, "#000");
 blueGrad.addColorStop(1, "#00f");
 
 let messages = [
+    '',
     'Use the arrows',
     'Use the ramp',
     'Use momentum',
@@ -155,7 +156,7 @@ export let requestWorldSample = (pos: Vec2): void => {
 export let readWorldSample = (): void =>
     g.readPixels(0, 0, 2, 1, gl_RGBA, gl_FLOAT, worldSampleResult);
 
-export let renderState = (curLevel: number, state: GameState): void => {
+export let renderState = (curLevel: number, saveState: string[], state: GameState): void => {
     g.bindFramebuffer(gl_FRAMEBUFFER, null);
 
     c.fillStyle='#000';
@@ -168,7 +169,7 @@ export let renderState = (curLevel: number, state: GameState): void => {
         let x = curLevelObjectData[i][1];
         let y = curLevelObjectData[i][2];
 
-        let objScale = curLevelObjectData[i][0] == 1 ? 3 : 
+        let objScale = curLevelObjectData[i][0] == 1 ? 4 : 
             curLevelObjectData[i][0] == 2 ? curLevelObjectData[i][4] :
             1 ;
 
@@ -179,8 +180,8 @@ export let renderState = (curLevel: number, state: GameState): void => {
         );
         c.scale(k_baseScale * state.cameraZoom * objScale, k_baseScale * state.cameraZoom * objScale);
 
-        let red: any = 10 + 10*curLevelObjectData[i][0];
-        red = red.toString(16);
+        let red: any = 10 + (([0,20+state.canBeDone|0,10])[curLevelObjectData[i][0]])
+        red = Math.min(255,red).toString(16);
         c.fillStyle = `#${(red.length < 2 ? '0' : '') + red}0000`;
         c.fillRect(-1.1,-1.1,2.2,2.2);
         c.fillStyle = greenGrad;
@@ -211,16 +212,70 @@ export let renderState = (curLevel: number, state: GameState): void => {
     if( messages[curLevel] ) {
         c.save();
         c.translate(
-            k_fullWidth/2 + (0 - state.cameraPos[0]) * k_baseScale * state.cameraZoom,
-            k_fullHeight/2 + (0 - state.cameraPos[1]) * k_baseScale * state.cameraZoom
+            k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
+            k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
         );
         c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
 
         c.fillStyle = '#0f0';
-        c.font = '2px Arial';
+        c.font = 'italic bold 2px Arial';
         c.fillText(messages[curLevel], -15, -9);
 
         c.restore();
+    }
+
+    let selLevel = 1;
+
+    if( !curLevel ) {
+        c.save();
+        c.translate(
+            k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
+            k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
+        );
+        c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
+
+        c.fillStyle = '#0f0';
+        c.strokeStyle = '#030';
+        c.lineWidth = 1;
+        c.lineJoin = 'round';
+        c.font = 'italic bold 18px Arial';
+        c.strokeText('GALAXY', 118, 8);
+        c.strokeText('RIDER', 127, 23);
+        c.fillText('GALAXY', 118, 8);
+        c.fillText('RIDER', 127, 23);
+
+        c.font = '4px Arial';
+        c.fillText('Use Arrows and Enter to Select Level', 120, 76);
+
+        c.restore();
+
+        for( let i = 0; i < 28; ++i ) {
+            c.save();
+            c.translate(
+                k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
+                k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
+            );
+            c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
+
+            c.fillStyle = c.strokeStyle = i+1==selLevel ? '#00f' : i > saveState.length ? '#003' : '#007';
+
+            c.lineWidth = i+1==selLevel ? 1 : .25;
+            let col = i % 7;
+            let row = (i / 7) | 0;
+            let x = 108+col*14;
+            let y = 33+row*10;
+            c.strokeRect(x, y, 12, 8);
+
+            c.font = (i+1==selLevel ? 'bold ' : '')+'3px Courier';
+            c.fillText(i as any + 1, x+4, y+3);
+            c.font = 'bold 2.5px Courier';
+
+            if( i < saveState.length ) {
+                c.fillText(saveState[i], x+1, y+7);
+            }
+
+            c.restore();
+        }
     }
 
     g.activeTexture(gl_TEXTURE1);

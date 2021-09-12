@@ -1,4 +1,4 @@
-import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, zzfx } from "./globals";
+import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, zzfx, smoothstep } from "./globals";
 import { readWorldSample, requestWorldSample, worldSampleResult } from "./render";
 import { SpriteState } from "./sprite";
 
@@ -17,6 +17,10 @@ declare const k_maxFallSpeed: number;
 declare const k_velocityLpfSize: number;
 declare const k_turnAroundMultiplier: number;
 
+export type LevelSelect = {
+    selectedLevel: number,
+};
+
 export type GameState = {
     tick: number,
     fade: number,
@@ -28,6 +32,7 @@ export type GameState = {
     playerRot: number,
     playerEndState: PlayerEndState,
     canBeDone: number,
+    selectedLevel: number,
 };
 
 export const enum PlayerEndState {
@@ -53,8 +58,9 @@ let gravitySuppressionCountdown: number;
 let norm: Vec2;
 
 let velocityLpf: Vec2[];
+let keysDown: typeof globalKeysDown;
 
-export let newGameState = (): GameState => (
+export let newGameState = (curLevel: number): GameState => (
     playerVel = [0,0],
     soundIndex =
     zoomed = 
@@ -64,11 +70,12 @@ export let newGameState = (): GameState => (
     gravitySuppressionCountdown = 
     playerFromPlanet =
     orbitOrigin = 0,
+    keysDown = curLevel ? globalKeysDown : {},
     velocityLpf = [],
     {
         tick: 0,
         fade: 0,
-        cameraZoom: 1.5,
+        cameraZoom: curLevel ? 1.5 : 3,
         cameraPos: [0, 0],
         spriteState: SpriteState.Rolling,
         spriteScaleX: 1,
@@ -76,6 +83,7 @@ export let newGameState = (): GameState => (
         playerRot: 0,
         playerEndState: PlayerEndState.Alive,
         canBeDone: 0,
+        selectedLevel: 1,
     }
 );
 
@@ -90,13 +98,15 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     playerRot: radsLerp(a.playerRot, b.playerRot, t),
     playerEndState: b.playerEndState,
     canBeDone: lerp(a.canBeDone, b.canBeDone, t),
+    selectedLevel: b.selectedLevel,
 });
 
-export let tickGameState = (oldState: GameState, curLevel: number): GameState => {
+export let tickGameState = (oldState: GameState, curLevel: number, saveState: string[]): GameState => {
     let newState = lerpGameState(oldState, oldState, 0);
     let groundRot = 0;
 
     newState.tick++;
+
     if( gravitySuppressionCountdown > 0 )
         gravitySuppressionCountdown--;
 
@@ -107,6 +117,18 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
     } else {
         if( newState.fade >= 0 ) {
             newState.fade -= 0.1;
+        }
+    }
+
+    if( !curLevel ) {
+        if( newState.tick > 15 && newState.tick < 25 ) {
+            keysDown = { [KeyCode.Right]: Bool.True, [KeyCode.Up]: Bool.True };
+        } else {
+            keysDown = {};
+        }
+
+        if( globalKeysDown[KeyCode.Enter] && newState.tick > 200 ) {
+            newState.playerEndState = PlayerEndState.Won;
         }
     }
 
@@ -135,7 +157,7 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
                 1 / k_orbitSpeed
             );
 
-            if( globalKeysDown[KeyCode.Up] ) {
+            if( keysDown[KeyCode.Up] ) {
                 zzfx(...[1.47,,115,.02,.07,,1,.37,6.3,,,,,,,,.03,.79,.01]); // Shoot 368
                 playerVel = v2MulAdd( [0,0], playerVel, k_orbitBoost);
                 //playerVel[1] -= k_jumpSpeed;
@@ -150,21 +172,21 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
 
             if( newState.playerEndState == PlayerEndState.Alive )
             {
-                if( globalKeysDown[KeyCode.Up] && playerCanJump ) {
+                if( keysDown[KeyCode.Up] && playerCanJump ) {
                     playerVel[1] -= k_jumpSpeed;
                     playerCanJump = 0;
                     zzfx(...[1.43,,1487,,.03,.12,,.61,45,2.5,,.03,,.7,,.2,.05]);
                 }
 
-                if( globalKeysDown[KeyCode.Down] && !stompKeyDown ) {
+                if( keysDown[KeyCode.Down] && !stompKeyDown ) {
                     zzfx(...[1.56,.1,367,.01,.07,.08,1,.5,-4,,,,,,,,.09,0,.05]); // Shoot 441
                     if( playerVel[1] < k_stompSpeed ) {
                         playerVel[1] = k_stompSpeed;
                     }
                 }
 
-                walkAccel = globalKeysDown[KeyCode.Left] ? -k_walkAccel :
-                    globalKeysDown[KeyCode.Right] ? k_walkAccel : 0;
+                walkAccel = keysDown[KeyCode.Left] ? -k_walkAccel :
+                    keysDown[KeyCode.Right] ? k_walkAccel : 0;
 
                 if( walkAccel * playerVel[0] < -.0001 ) {
                     walkAccel *= k_turnAroundMultiplier;
@@ -172,7 +194,7 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
                     walkAccel = 0;
                 }
 
-                if( playerCanJump && !globalKeysDown[KeyCode.Left] && !globalKeysDown[KeyCode.Right] ) {
+                if( playerCanJump && !keysDown[KeyCode.Left] && !keysDown[KeyCode.Right] ) {
                     if( Math.abs(playerVel[0]) > k_walkDecel ) {
                         walkAccel = -Math.sign(playerVel[0]) * k_walkDecel;
                     } else {
@@ -180,8 +202,8 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
                     }
                 }
 
-                globalKeysDown[KeyCode.Left] && (newState.spriteScaleX = -1);
-                globalKeysDown[KeyCode.Right] && (newState.spriteScaleX = 1);
+                keysDown[KeyCode.Left] && (newState.spriteScaleX = -1);
+                keysDown[KeyCode.Right] && (newState.spriteScaleX = 1);
             }
 
             if( !playerFromPlanet || orbitRadius ) {
@@ -190,7 +212,7 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
                 }
                 playerVel[0] += walkAccel;
                 if( !gravitySuppressionCountdown )
-                    playerVel[1] += k_gravity + (globalKeysDown[KeyCode.Down]|0) * k_pumpGravity;
+                    playerVel[1] += k_gravity + (keysDown[KeyCode.Down]|0) * k_pumpGravity;
             }
 
             if( playerVel[1] > k_maxFallSpeed ) {
@@ -205,7 +227,7 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
 
             playerFromPlanet = 0;
             for( let i = 0; i < curLevelObjectData.length; ++i ) {
-                if( curLevelObjectData[i][0] == 2 ) { 
+                if( curLevel && curLevelObjectData[i][0] == 2 ) { 
                     let planetPos: Vec2 = [curLevelObjectData[i][1], curLevelObjectData[i][2]];
                     let playerFromPlanet0 = v2MulAdd(newState.playerPos, planetPos, -1);
                     let playerDistFromPlanetSqr = v2Dot(playerFromPlanet0, playerFromPlanet0);
@@ -270,11 +292,11 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
             newState.playerRot = groundRot;
             newState.spriteState = 
                 playerCanJump ? SpriteState.Rolling :
-                globalKeysDown[KeyCode.Down] ? SpriteState.Stomping :
+                keysDown[KeyCode.Down] ? SpriteState.Stomping :
                 SpriteState.Jumping;
         }
 
-        if( newState.playerPos[1] > 20 ) {
+        if( curLevel && newState.playerPos[1] > 20 ) {
             newState.playerEndState = PlayerEndState.Dead;
         }
     }
@@ -285,12 +307,24 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
     if(v2Dot(playerVel,playerVel) > .5*.5) {
         zoomed = Bool.True;
     }
-    if( zoomed && newState.cameraZoom > 0.7 ) {
+    if( curLevel && zoomed && newState.cameraZoom > 0.7 ) {
         newState.cameraZoom -= 0.01;
     }
 
     newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1]], velSum, 10 / k_velocityLpfSize );
-    newState.cameraPos[1] = Math.min(newState.cameraPos[1], 10);
+    newState.cameraPos[1] = Math.min(newState.cameraPos[1], curLevel ? 10 : 100);
+
+    if( !curLevel ) {
+        //newState.tick = 1000; // Jump to menu
+        newState.cameraPos = v2Lerp(newState.cameraPos, [155,32], smoothstep(100,300,newState.tick));
+        let zzz = smoothstep(50,300,newState.tick);
+        newState.cameraZoom = lerp(3, 0.4, 1-(1-zzz)*(1-zzz));
+
+        if( !globalKeysDown[0] ) {
+            newState.tick = 0;
+            return newState;
+        }
+    }
 
     if( curLevelObjectData.filter((x:any)=>!x[0]).length<1 ) {
         newState.canBeDone++;
@@ -323,7 +357,7 @@ export let tickGameState = (oldState: GameState, curLevel: number): GameState =>
         }
     }
 
-    stompKeyDown = globalKeysDown[KeyCode.Down];
+    stompKeyDown = keysDown[KeyCode.Down];
 
     return newState;
 };

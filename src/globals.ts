@@ -47,6 +47,7 @@ export let v2Dot = (a: Vec2, b: Vec2): number =>
 export let v2Cross = (a: Vec2, b: Vec2): number =>
     a[1]*b[0] - a[0]*b[1];
 
+
 export let v2Reflect = (a: Vec2, norm: Vec2, normFactor: number, tanFactor: number): Vec2 => {
     let tan: Vec2 = [norm[1], -norm[0]];
     let normComp = -v2Dot(a, norm) * normFactor;
@@ -54,11 +55,18 @@ export let v2Reflect = (a: Vec2, norm: Vec2, normFactor: number, tanFactor: numb
     return v2MulAdd([normComp*norm[0],normComp*norm[1]], tan, tanComp);
 };
 
+let clamp01 = (x: number) =>
+    x < 0 ? 0 : x > 1 ? 1 : x;
+export let smoothstep = (edge0: number, edge1: number, x: number) => {
+    x = clamp01((x - edge0) / (edge1 - edge0));
+    return x * x * (3 - 2 * x);
+};
+
 // ZzFXMicro - Zuper Zmall Zound Zynth - v1.1.8 ~ 884 bytes minified
 // https://github.com/KilledByAPixel/ZzFX
 declare const webkitAudioContext: any;
 let zzfxX:any
-let zzfxV:number=.3    // volume
+let zzfxV:number=.1    // volume
 export let zzfx: (...x:any[])=>void =       // play sound 
 (p:any=1,k:any=.05,b:any=220,e=0,r=0,t=.1,q=0,D=1,u=0,y=0,v=0,z=0,l=0,E=0,A=0,F=0,c=0,w=1,m=0,B=0)=>{let
 M=Math,R=44100,d=2*M.PI,G=u*=500*d/R/R,C=b*=(1-k+2*k*(M.random as any)(k=[]))*d/R,g=0,H=0,a=0,n=1,I=0
