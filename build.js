@@ -6,7 +6,30 @@ const _ = require('lodash');
 const ShapeShifter = require('regpack/shapeShifter');
 const advzipPath = require('advzip-bin');
 const constantsJson = require('./src/constants.json');
-const levelsJson = require('./src/levels.json');
+const levelsJson = [
+    require('./src/level0.json'),
+    require('./src/level1.json'),
+    require('./src/level2.json'),
+    require('./src/level3.json'),
+    require('./src/level4.json'),
+    require('./src/level5.json'),
+    require('./src/level6.json'),
+    require('./src/level7.json'),
+    require('./src/level8.json'),
+    require('./src/level9.json'),
+    require('./src/level10.json'),
+    require('./src/level11.json'),
+    require('./src/level12.json'),
+    require('./src/level13.json'),
+    require('./src/level14.json'),
+    require('./src/level15.json'),
+    require('./src/level16.json'),
+    require('./src/level17.json'),
+    require('./src/level18.json'),
+    require('./src/level19.json'),
+    require('./src/level20.json'),
+    require('./src/level21.json'),
+];
 
 const DEBUG = process.argv.indexOf('--debug') >= 0;
 const MONO_RUN = process.platform === 'win32' ? '' : 'mono ';

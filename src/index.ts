@@ -12,7 +12,7 @@ let accTime = 0;
 let prevNow = NaN;
 let curState: GameState;
 let prevState: GameState;
-let curLevel = DEBUG ? 1 : 0;
+let curLevel = DEBUG ? 5 : 0;
 let saveState: number[] = [];
 let saveStateLen: number;
 

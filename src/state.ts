@@ -54,6 +54,8 @@ let orbitOmega: number;
 let gravitySuppressionCountdown: number;
 let seenMenuOnce: Bool = 0;
 
+let killHeight: number = 10;
+
 let norm: Vec2;
 
 let velocityLpf: Vec2[];
@@ -320,7 +322,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                 SpriteState.Jumping;
         }
 
-        if( curLevel && newState.playerPos[1] > 20 ) {
+        if( curLevel && newState.playerPos[1] > killHeight ) {
             newState.playerEndState = PlayerEndState.Dead;
         }
     }
@@ -336,7 +338,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
     }
 
     newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1]], velSum, 10 / k_velocityLpfSize );
-    newState.cameraPos[1] = Math.min(newState.cameraPos[1], curLevel ? 10 : 100);
+    newState.cameraPos[1] = Math.min(newState.cameraPos[1], killHeight - 10);
 
     if( !curLevel ) {
         //newState.tick = 1000; // Jump to menu
@@ -354,9 +356,13 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
         newState.canBeDone++;
     }
 
+    killHeight = 20;
     for( let i = 0; i < curLevelObjectData.length; ++i ) {
         let ddd = v2MulAdd(newState.playerPos, curLevelObjectData[i].slice(1), -1);
         let dot = v2Dot(ddd, ddd);
+        if(curLevelObjectData[i][0] == 3) {
+            killHeight = curLevelObjectData[i][2];
+        }
         if(curLevelObjectData[i][0] == 1) {
             if(newState.playerEndState == PlayerEndState.Won) {
                 playerVel = v2MulAdd([0,0], playerVel, 0.8);

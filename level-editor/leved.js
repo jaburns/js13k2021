@@ -20,9 +20,7 @@ const camera = [0,0];
  * [ item=3, kind, x, y, 2:r0, 2:r1 ]  kind: 0=coin ; 1=exit ; 2=blackhole
  *
  */
-let levels = [[]];
-let curLevel = 0;
-let levelObjects = levels[curLevel];
+let levelObjects = [];
 
 const crosshair = (x, y) => {
     const X = 0.5/scale;
@@ -114,7 +112,7 @@ const render = () => {
         ctx.strokeStyle = '#f0f';
         if( obj[0] === 3 ) {
             if( obj[1] !== 2 ) {
-                ctx.strokeStyle = obj[1] === 0 ? '#ff0' : '#fff';
+                ctx.strokeStyle = obj[1] === 0 ? '#ff0' : obj[1] === 3 ? '#f00' : '#fff';
             }
         }
         crosshair(obj[2], obj[3]);
@@ -159,17 +157,7 @@ document.onkeydown = e => {
     }
     if(e.code === 'KeyS') {
         latestObj = -2;
-        textarea.value = JSON.stringify(levels);
-    }
-    if(e.code === 'ArrowRight') {
-        if( ++curLevel >= levels.length ) curLevel = levels.length - 1;
-        levelObjects = levels[curLevel];
-        document.title = curLevel;
-    }
-    if(e.code === 'ArrowLeft') {
-        if( --curLevel < 0 ) curLevel = 0;
-        levelObjects = levels[curLevel];
-        document.title = curLevel;
+        textarea.value = JSON.stringify(levelObjects);
     }
 
     render();
@@ -335,8 +323,7 @@ textarea.oninput = () => {
     if( latestObj === -2 ) {
         try {
             let newObj = JSON.parse(textarea.value);
-            levels = newObj;
-            levelObjects = levels[curLevel];
+            levelObjects = newObj;
             render();
         } catch(e) {
         };

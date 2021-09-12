@@ -171,6 +171,9 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
     c.globalCompositeOperation = 'lighter'
 
     for( let i = 0; i < curLevelObjectData.length; ++i ) {
+        if( curLevelObjectData[i][0] == 3 )
+            continue;
+
         let x = curLevelObjectData[i][1];
         let y = curLevelObjectData[i][2];
 
