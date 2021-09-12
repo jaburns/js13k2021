@@ -1,4 +1,4 @@
-import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, zzfx, smoothstep } from "./globals";
+import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, zzfx, smoothstep, ticksToTime } from "./globals";
 import { readWorldSample, requestWorldSample, worldSampleResult } from "./render";
 import { SpriteState } from "./sprite";
 
@@ -17,10 +17,6 @@ declare const k_maxFallSpeed: number;
 declare const k_velocityLpfSize: number;
 declare const k_turnAroundMultiplier: number;
 
-export type LevelSelect = {
-    selectedLevel: number,
-};
-
 export type GameState = {
     tick: number,
     fade: number,
@@ -32,6 +28,7 @@ export type GameState = {
     playerRot: number,
     playerEndState: PlayerEndState,
     canBeDone: number,
+    isDone: number,
     selectedLevel: number,
 };
 
@@ -39,6 +36,7 @@ export const enum PlayerEndState {
     Alive,
     Dead,
     Won,
+    Quit,
 }
 
 let playerCanJump: number;
@@ -54,13 +52,14 @@ let orbitRadius: number; // Doubles as flag for if we've recently been in orbit
 let orbitTheta: number;
 let orbitOmega: number;
 let gravitySuppressionCountdown: number;
+let seenMenuOnce: Bool = 0;
 
 let norm: Vec2;
 
 let velocityLpf: Vec2[];
 let keysDown: typeof globalKeysDown;
 
-export let newGameState = (curLevel: number): GameState => (
+export let newGameState = (curLevel: number, selectedLevel: number): GameState => (
     playerVel = [0,0],
     soundIndex =
     zoomed = 
@@ -73,17 +72,18 @@ export let newGameState = (curLevel: number): GameState => (
     keysDown = curLevel ? globalKeysDown : {},
     velocityLpf = [],
     {
-        tick: 0,
+        tick: seenMenuOnce && !curLevel ? 1000 : 0,
         fade: 0,
         cameraZoom: curLevel ? 1.5 : 3,
         cameraPos: [0, 0],
         spriteState: SpriteState.Rolling,
         spriteScaleX: 1,
-        playerPos: [0, 0],
+        playerPos: seenMenuOnce && !curLevel ? [106.4, 18.7] : [0, 0],
         playerRot: 0,
         playerEndState: PlayerEndState.Alive,
+        isDone: 0,
         canBeDone: 0,
-        selectedLevel: 1,
+        selectedLevel: (curLevel?0:selectedLevel),
     }
 );
 
@@ -97,11 +97,12 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     playerPos: v2Lerp(a.playerPos, b.playerPos, t),
     playerRot: radsLerp(a.playerRot, b.playerRot, t),
     playerEndState: b.playerEndState,
+    isDone: b.isDone,
     canBeDone: lerp(a.canBeDone, b.canBeDone, t),
     selectedLevel: b.selectedLevel,
 });
 
-export let tickGameState = (oldState: GameState, curLevel: number, saveState: string[]): GameState => {
+export let tickGameState = (oldState: GameState, curLevel: number, saveState: number[], saveStateLen: number): GameState => {
     let newState = lerpGameState(oldState, oldState, 0);
     let groundRot = 0;
 
@@ -116,24 +117,40 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: st
         }
     } else {
         if( newState.fade >= 0 ) {
-            newState.fade -= 0.1;
+            newState.fade -= newState.playerEndState == PlayerEndState.Won ? 0.04 : 0.1;
         }
     }
 
     if( !curLevel ) {
+        seenMenuOnce = 1;
+
         if( newState.tick > 15 && newState.tick < 25 ) {
             keysDown = { [KeyCode.Right]: Bool.True, [KeyCode.Up]: Bool.True };
         } else {
             keysDown = {};
         }
 
-        if( globalKeysDown[KeyCode.Enter] && newState.tick > 200 ) {
-            newState.playerEndState = PlayerEndState.Won;
+        if( newState.tick > 200 && newState.playerEndState != PlayerEndState.Won ) {
+            let fx = () => zzfx(...[1.56,.1,367,.01,.07,.08,1,.5,-4,,,,,,,,.09,0,.05]); // Shoot 441
+            if( globalKeysDown[KeyCode.Left] ) fx(), newState.selectedLevel--;
+            if( globalKeysDown[KeyCode.Right] ) fx(), newState.selectedLevel++;
+            if( globalKeysDown[KeyCode.Up] ) fx(), newState.selectedLevel-=7;
+            if( globalKeysDown[KeyCode.Down] ) fx(), newState.selectedLevel+=7;
+            newState.selectedLevel = Math.max(0,Math.min(Math.min(27,saveStateLen),newState.selectedLevel));
+            if( globalKeysDown[KeyCode.Enter] ) {
+                zzfx(...[2,0,1,.1,.3,1,3,.6,,.6,30+5*(curLevel%2),,.35,,,,.18,.78,.1,.46]); // Music 200
+                newState.playerEndState = PlayerEndState.Won;
+            }
+        }
+    } else {
+        if( globalKeysDown[KeyCode.Esc] && newState.playerEndState == PlayerEndState.Alive ) {
+            newState.playerEndState = PlayerEndState.Quit;
         }
     }
 
     if( newState.playerEndState == PlayerEndState.Won )
     {
+        newState.isDone++;
         newState.playerPos[0] += playerVel[0];
         newState.playerPos[1] += playerVel[1];
     }
@@ -170,7 +187,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: st
         {
             let walkAccel = 0;
 
-            if( newState.playerEndState == PlayerEndState.Alive )
+            if( newState.fade > .99 && newState.playerEndState == PlayerEndState.Alive )
             {
                 if( keysDown[KeyCode.Up] && playerCanJump ) {
                     playerVel[1] -= k_jumpSpeed;
@@ -340,6 +357,9 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: st
             if(newState.canBeDone && dot < 3*3 && newState.playerEndState != PlayerEndState.Won) {
                 zzfx(...[2,0,1,.1,.3,1,3,.6,,.6,30+5*(curLevel%2),,.35,,,,.18,.78,.1,.46]); // Music 200
                 newState.playerEndState = PlayerEndState.Won;
+                if( !saveState[curLevel-1] || newState.tick <= saveState[curLevel-1] ) {
+                    saveState[curLevel-1] = newState.tick-1;
+                }
             }
         }
         if(!curLevelObjectData[i][0]) {

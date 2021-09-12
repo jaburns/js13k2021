@@ -1,4 +1,4 @@
-import { Bool, globalKeysDown, KeyCode, TICK_MS } from './globals';
+import { Bool, globalKeysDown, KeyCode } from './globals';
 import { GameState, lerpGameState, newGameState, PlayerEndState, tickGameState } from "./state";
 import { initRender, loadLevel, renderState } from "./render";
 import { tickSprite } from './sprite';
@@ -6,13 +6,15 @@ import {startAudio} from './synth';
 
 declare const C0: HTMLCanvasElement;
 declare const DEBUG: boolean;
+declare const k_tickMillis: number;
 
 let accTime = 0;
 let prevNow = performance.now();
 let curState: GameState;
 let prevState: GameState;
-let curLevel = DEBUG ? 4 : 0;
-let saveState: string[] = [];
+let curLevel = DEBUG ? 1 : 0;
+let saveState: number[] = [];
+let saveStateLen: number;
 
 let frame = () => {
     requestAnimationFrame(frame);
@@ -22,25 +24,42 @@ let frame = () => {
     accTime += dt;
     prevNow = newNow;
 
-    while( accTime > TICK_MS ) {
-        accTime -= TICK_MS;
+    while( accTime > k_tickMillis ) {
+        accTime -= k_tickMillis;
 
         prevState = curState;
-        curState = tickGameState(curState, curLevel, saveState);
+        curState = tickGameState(curState, curLevel, saveState, saveStateLen);
 
         tickSprite(curState.spriteState);
 
         globalKeysDown[KeyCode.Up] = Bool.False;
+        if( !curLevel && curState.playerEndState != PlayerEndState.Won ) {
+            globalKeysDown[KeyCode.Down] =
+            globalKeysDown[KeyCode.Left] =
+            globalKeysDown[KeyCode.Right] = Bool.False;
+        }
     }
 
     if( curState.fade < 0 ) {
-        window.localStorage.setItem('galaxyrider', JSON.stringify(saveState));
-        if( curState.playerEndState == PlayerEndState.Won ) curLevel++;
-        curState = prevState = newGameState(curLevel);
+        let selectedLevel = Math.min(27,saveState.length);
+        if( curState.playerEndState == PlayerEndState.Quit ) {
+            selectedLevel = curLevel - 1;
+            curLevel = 0;
+        } else if( !curLevel ) {
+            saveStateLen = saveState.length;
+            curLevel = curState.selectedLevel + 1;
+        } else {
+            if( curState.playerEndState == PlayerEndState.Won ) {
+                window.localStorage.setItem('galaxyrider', JSON.stringify(saveState));
+                curLevel++;
+            }
+            curLevel %= 28;
+        }
+        curState = prevState = newGameState(curLevel, selectedLevel);
         loadLevel(curLevel);
     }
 
-    renderState(curLevel, saveState, lerpGameState(prevState, curState, accTime / TICK_MS));
+    renderState(curLevel, saveState, lerpGameState(prevState, curState, accTime / k_tickMillis));
 };
 
 let got = window.localStorage.getItem('galaxyrider');
@@ -50,7 +69,7 @@ if( got ) {
 }
 
 initRender();
-curState = prevState = newGameState(curLevel);
+curState = prevState = newGameState(curLevel, Math.min(27,saveStateLen = saveState.length));
 loadLevel(curLevel);
 frame();
 

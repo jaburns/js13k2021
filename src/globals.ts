@@ -1,6 +1,5 @@
 declare const __LEVELS_JS__: any;
-
-export const TICK_MS = 33;
+declare const k_tickMillis: number;
 
 export const enum KeyCode {
     Left = 37,
@@ -8,6 +7,7 @@ export const enum KeyCode {
     Right = 39,
     Down = 40,
     Enter = 13,
+    Esc = 27,
 }
 
 export let curLevelObjectData: any;
@@ -47,6 +47,13 @@ export let v2Dot = (a: Vec2, b: Vec2): number =>
 export let v2Cross = (a: Vec2, b: Vec2): number =>
     a[1]*b[0] - a[0]*b[1];
 
+export let ticksToTime = (ticks: number): string => {
+    if(!ticks) return '';
+    let centis = (Math.max(0,(ticks|0) - 10) * k_tickMillis) / 10;
+    let secs = (centis / 100)|0;
+    let centiString = ((centis|0)%100).toString();
+    return secs + ':' + (centiString.length < 2 ? '0' : '') + centiString;
+};
 
 export let v2Reflect = (a: Vec2, norm: Vec2, normFactor: number, tanFactor: number): Vec2 => {
     let tan: Vec2 = [norm[1], -norm[0]];

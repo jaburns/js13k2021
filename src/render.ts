@@ -4,7 +4,7 @@ import {
     gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0, gl_TEXTURE1 
 } from "./glConsts";
 import { renderSprite } from './sprite';
-import { curLevelObjectData, loadLevelData, Vec2 } from './globals';
+import { curLevelObjectData, loadLevelData, ticksToTime, Vec2 } from './globals';
 import { main_vert, main_frag } from './shaders.gen';
 import { GameState } from "./state";
 
@@ -40,26 +40,25 @@ let messages = [
 ];
 
 
-let randy = (x: number): number => (98765 * x * 16807 % 2147483647 - 1) / 2147483646;
+let hueForLevel = (level: number): number => (98765 * level * 16807 % 2147483647 - 1) / 2147483646;
 
-var hue2rgb = function hue2rgb(p: number, q: number, t: number){
+let hue2rgb = (p: number, q: number, t: number) => {
     if(t < 0) t += 1;
     if(t > 1) t -= 1;
-    if(t < 1/6) return p + (q - p) * 6 * t;
-    if(t < 1/2) return q;
-    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-    return p;
-}
+    return t < 1/6 ? p + (q - p) * 6 * t :
+           t < 1/2 ? q :
+           t < 2/3 ? p + (q - p) * (2/3 - t) * 6 :
+           p;
+};
 
-function hslToRgb(h: number, s: number, l: number){
-    var r, g, b;
+let hslToRgb = (h: number, s: number, l: number) => {
+    let r, g, b;
+    let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    let p = 2 * l - q;
 
     if(s == 0){
         r = g = b = l; // achromatic
     }else{
-
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        var p = 2 * l - q;
         r = hue2rgb(p, q, h + 1/3);
         g = hue2rgb(p, q, h);
         b = hue2rgb(p, q, h - 1/3);
@@ -156,7 +155,7 @@ export let requestWorldSample = (pos: Vec2): void => {
 export let readWorldSample = (): void =>
     g.readPixels(0, 0, 2, 1, gl_RGBA, gl_FLOAT, worldSampleResult);
 
-export let renderState = (curLevel: number, saveState: string[], state: GameState): void => {
+export let renderState = (curLevel: number, saveState: number[], state: GameState): void => {
     g.bindFramebuffer(gl_FRAMEBUFFER, null);
 
     c.fillStyle='#000';
@@ -211,6 +210,7 @@ export let renderState = (curLevel: number, saveState: string[], state: GameStat
 
     if( messages[curLevel] ) {
         c.save();
+        c.textAlign = 'left';
         c.translate(
             k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
             k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
@@ -224,8 +224,6 @@ export let renderState = (curLevel: number, saveState: string[], state: GameStat
         c.restore();
     }
 
-    let selLevel = 1;
-
     if( !curLevel ) {
         c.save();
         c.translate(
@@ -238,14 +236,15 @@ export let renderState = (curLevel: number, saveState: string[], state: GameStat
         c.strokeStyle = '#030';
         c.lineWidth = 1;
         c.lineJoin = 'round';
+        c.textAlign = 'center';
         c.font = 'italic bold 18px Arial';
-        c.strokeText('GALAXY', 118, 8);
-        c.strokeText('RIDER', 127, 23);
-        c.fillText('GALAXY', 118, 8);
-        c.fillText('RIDER', 127, 23);
+        c.strokeText('GALAXY', 155, 8);
+        c.strokeText('RIDER', 155, 23);
+        c.fillText('GALAXY', 155, 8);
+        c.fillText('RIDER', 155, 23);
 
         c.font = '4px Arial';
-        c.fillText('Use Arrows and Enter to Select Level', 120, 76);
+        c.fillText('Use Arrows and Enter to Select Level', 155, 75);
 
         c.restore();
 
@@ -257,25 +256,33 @@ export let renderState = (curLevel: number, saveState: string[], state: GameStat
             );
             c.scale(k_baseScale * state.cameraZoom, k_baseScale * state.cameraZoom);
 
-            c.fillStyle = c.strokeStyle = i+1==selLevel ? '#00f' : i > saveState.length ? '#003' : '#007';
+            c.fillStyle = c.strokeStyle = i==state.selectedLevel ? '#00f' : i > saveState.length ? '#003' : '#007';
 
-            c.lineWidth = i+1==selLevel ? 1 : .25;
+            c.lineWidth = i==state.selectedLevel ? 1 : .25;
             let col = i % 7;
             let row = (i / 7) | 0;
             let x = 108+col*14;
-            let y = 33+row*10;
+            let y = 31+row*10;
             c.strokeRect(x, y, 12, 8);
 
-            c.font = (i+1==selLevel ? 'bold ' : '')+'3px Courier';
-            c.fillText(i as any + 1, x+4, y+3);
+            c.font = (i==state.selectedLevel ? 'bold ' : '')+'3px Courier';
+            c.textAlign = 'center';
+            c.fillText(i as any + 1, x+6, y+3);
             c.font = 'bold 2.5px Courier';
 
             if( i < saveState.length ) {
-                c.fillText(saveState[i], x+1, y+7);
+                c.fillText(ticksToTime(saveState[i]), x+6, y+7);
             }
 
             c.restore();
         }
+    } else {
+        c.save();
+        c.fillStyle = '#f00';
+        c.font = '32px Courier';
+        c.textAlign = 'right';
+        c.fillText(ticksToTime(state.tick - state.isDone), 1010, 42);
+        c.restore();
     }
 
     g.activeTexture(gl_TEXTURE1);
@@ -286,7 +293,7 @@ export let renderState = (curLevel: number, saveState: string[], state: GameStat
     g.uniform1i(g.getUniformLocation(shader, 'S'), 1);
     g.uniform4f(g.getUniformLocation(shader, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, state.tick);
     g.uniform4f(g.getUniformLocation(shader, 's'), state.playerPos[0], state.playerPos[1], state.fade, state.canBeDone);
-    g.uniform4fv(g.getUniformLocation(shader, 'r'), hslToRgb(randy(curLevel),.4,.5));
+    g.uniform4fv(g.getUniformLocation(shader, 'r'), hslToRgb(hueForLevel(curLevel),.4,.5));
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     let posLoc = g.getAttribLocation( shader, 'a' );
