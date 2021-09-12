@@ -24,7 +24,7 @@ let frame = () => {
         accTime -= TICK_MS;
 
         prevState = curState;
-        curState = tickGameState(curState);
+        curState = tickGameState(curState, curLevel);
 
         tickSprite(curState.spriteState);
 
@@ -45,4 +45,4 @@ curState = prevState = newGameState();
 loadLevel(curLevel);
 frame();
 
-window.onclick = () => { startAudio(); }
+window.onkeydown = () => { startAudio(); }

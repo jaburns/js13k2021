@@ -2,6 +2,7 @@ uniform sampler2D T;
 uniform sampler2D S;
 uniform vec4 t;
 uniform vec4 s;
+uniform vec4 r;
 
 // ==================================================================================================
 // Noise
@@ -82,7 +83,9 @@ vec3 sampleBackground(vec2 worldPosBg) {
 
 void main() {
     if( t.z == 0.0 ) {
-        gl_FragColor = sampleWorld(t.xy, .01);
+        gl_FragColor = gl_FragCoord.x < 1.
+            ? sampleWorld(t.xy, .01)
+            : sampleWorld(t.xy + vec2(0,.5), .01);
     } else {
         vec2 worldPos = (gl_FragCoord.xy - (0.5*vec2(k_fullWidth,k_fullHeight))),
              uv = gl_FragCoord.xy/vec2(k_fullWidth,k_fullHeight),
@@ -107,8 +110,7 @@ void main() {
                     ? .05*worldPos + .1*vec2(world.y,-world.x)*edge + .1*world.xy*edge
                     : .05*worldPos
             ));
-            const vec3 i_cc = vec3(.5,1,.8);
-            color = mix(.8*i_cc,i_cc,x);
+            color = mix(.8*r.rgb,r.rgb,x);
             color *= .25+.5*(1.-edge);
         }
 

@@ -38,7 +38,36 @@ let messages = [
     'Use the black hole',
 ];
 
-export let worldSampleResult = new Float32Array(4);
+
+let randy = (x: number): number => (98765 * x * 16807 % 2147483647 - 1) / 2147483646;
+
+var hue2rgb = function hue2rgb(p: number, q: number, t: number){
+    if(t < 0) t += 1;
+    if(t > 1) t -= 1;
+    if(t < 1/6) return p + (q - p) * 6 * t;
+    if(t < 1/2) return q;
+    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+}
+
+function hslToRgb(h: number, s: number, l: number){
+    var r, g, b;
+
+    if(s == 0){
+        r = g = b = l; // achromatic
+    }else{
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    return [r,g,b,0];
+}
+
+export let worldSampleResult = new Float32Array(8);
 
 export let initRender = (): void => {
     g.getExtension('OES_texture_float');
@@ -61,7 +90,7 @@ export let initRender = (): void => {
 
     sampleTex = g.createTexture()!;
     g.bindTexture(gl_TEXTURE_2D, sampleTex);
-    g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, 1, 1, 0, gl_RGBA, gl_FLOAT, null);
+    g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, 2, 1, 0, gl_RGBA, gl_FLOAT, null);
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_NEAREST);
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_NEAREST); 
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_CLAMP_TO_EDGE);
@@ -124,7 +153,7 @@ export let requestWorldSample = (pos: Vec2): void => {
 };
 
 export let readWorldSample = (): void =>
-    g.readPixels(0, 0, 1, 1, gl_RGBA, gl_FLOAT, worldSampleResult);
+    g.readPixels(0, 0, 2, 1, gl_RGBA, gl_FLOAT, worldSampleResult);
 
 export let renderState = (curLevel: number, state: GameState): void => {
     g.bindFramebuffer(gl_FRAMEBUFFER, null);
@@ -202,6 +231,7 @@ export let renderState = (curLevel: number, state: GameState): void => {
     g.uniform1i(g.getUniformLocation(shader, 'S'), 1);
     g.uniform4f(g.getUniformLocation(shader, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, state.tick);
     g.uniform4f(g.getUniformLocation(shader, 's'), state.playerPos[0], state.playerPos[1], state.fade, state.canBeDone);
+    g.uniform4fv(g.getUniformLocation(shader, 'r'), hslToRgb(randy(curLevel),.4,.5));
 
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     let posLoc = g.getAttribLocation( shader, 'a' );

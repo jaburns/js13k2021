@@ -98,20 +98,22 @@ let audioTick = ( y: Float32Array ) =>
     for (let i = 0; i < s_audioBufferSize; ++i) {
         let t = (_sampleOffset + i) / s_audioSampleRate;
         bufNoise[i] = 2*Math.random() - 1;
-        bufBass[i] = Math.sin( 110 * t * 2 * Math.PI ) * Math.sin( 0.1 * t );
-        bufBass[i] += .5*Math.sin( 110 * t * 2 * Math.PI * (Math.pow(2,3/12)) ) * Math.sin( 0.19 * t );
-        bufBass[i] += .8*Math.cos( 110 * t * 2 * Math.PI * (Math.pow(2,5/12)) ) * Math.sin( 0.39 * t );
-        bufBass[i] += Math.sin( 35 * t * 2 * Math.PI ) * Math.cos( 0.07 * t );
+        bufBass[i] =  0.75*Math.sin( 90 * t * 2 * Math.PI                      ) * Math.sin( 0.1 * t );
+        bufBass[i] += 0.75*Math.sin( 90 * t * 2 * Math.PI * (Math.pow(2,2/12)) ) * Math.cos( 0.19 * t );
+        bufBass[i] += 0.75*Math.cos( 90 * t * 2 * Math.PI * (Math.pow(2,5/12)) ) * Math.sin( 0.39 * t );
+        //bufBass[i] += 0.5*Math.sin( 0.25 * 110 * t * 2 * Math.PI                     ); // * Math.cos( 0.07 * t );
     }
 
     mainLpf( 150 + 25 * Math.sin(0.00002*_sampleOffset), bufNoise, bufNoiseOut );
 
     for (let i = 0; i < s_audioBufferSize; ++i) {
-        y[i] = 1.5*bufNoiseOut[i] + 0.3*Math.min(1,Math.max(-1,bufBass[i]));
+        y[i] = 0.5*bufNoiseOut[i] + 0.3*bufBass[i]; // Math.min(1,Math.max(-1,bufBass[i]));
     }
 
-
     _sampleOffset += s_audioBufferSize;
+
+    //if( (_sampleOffset / s_audioBufferSize) % 128 == 1 )
+    //    zzfx(...[1.03,0,130 * Math.pow(2,(2*Math.floor(Math.random()*3)/12)),.05,1.29,.39,1,.98,,,,,.32,,,,,.55,.03,.13]);
 };
 
 export let startAudio = () =>

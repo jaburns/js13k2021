@@ -40,6 +40,9 @@ let playerCanJump: number;
 let stompKeyDown: Bool;
 let playerVel: Vec2;
 let playerFromPlanet: Vec2 | 0;
+let playerLandedOnce: Bool;
+let zoomed: Bool;
+let soundIndex: number;
 
 let orbitOrigin: Vec2 | 0; // Doubles as flag for if we're currently in orbit
 let orbitRadius: number; // Doubles as flag for if we've recently been in orbit
@@ -53,6 +56,9 @@ let velocityLpf: Vec2[];
 
 export let newGameState = (): GameState => (
     playerVel = [0,0],
+    soundIndex =
+    zoomed = 
+    playerLandedOnce =
     stompKeyDown =
     playerCanJump =
     gravitySuppressionCountdown = 
@@ -86,7 +92,7 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     canBeDone: lerp(a.canBeDone, b.canBeDone, t),
 });
 
-export let tickGameState = (oldState: GameState): GameState => {
+export let tickGameState = (oldState: GameState, curLevel: number): GameState => {
     let newState = lerpGameState(oldState, oldState, 0);
     let groundRot = 0;
 
@@ -130,6 +136,7 @@ export let tickGameState = (oldState: GameState): GameState => {
             );
 
             if( globalKeysDown[KeyCode.Up] ) {
+                zzfx(...[1.47,,115,.02,.07,,1,.37,6.3,,,,,,,,.03,.79,.01]); // Shoot 368
                 playerVel = v2MulAdd( [0,0], playerVel, k_orbitBoost);
                 //playerVel[1] -= k_jumpSpeed;
                 orbitOrigin = 0;
@@ -149,8 +156,11 @@ export let tickGameState = (oldState: GameState): GameState => {
                     zzfx(...[1.43,,1487,,.03,.12,,.61,45,2.5,,.03,,.7,,.2,.05]);
                 }
 
-                if( globalKeysDown[KeyCode.Down] && !stompKeyDown && playerVel[1] < k_stompSpeed ) {
-                    playerVel[1] = k_stompSpeed;
+                if( globalKeysDown[KeyCode.Down] && !stompKeyDown ) {
+                    zzfx(...[,,359,.05,,.05,1,2.62,-0.5,,,,,,39,,,,,.06]); // Random 295
+                    if( playerVel[1] < k_stompSpeed ) {
+                        playerVel[1] = k_stompSpeed;
+                    }
                 }
 
                 walkAccel = globalKeysDown[KeyCode.Left] ? -k_walkAccel :
@@ -205,6 +215,7 @@ export let tickGameState = (oldState: GameState): GameState => {
 
                         if( !orbitRadius && v2Dot(playerFromPlanet, playerVel) > 0 ) {
                             let R = Math.sqrt( playerDistFromPlanetSqr );
+                            zzfx(...[1.08,,79,.05,.49,.67,,.45,,,1,.1,.16,,,.1,,.64,.04,.28]); // Powerup 370 - Mutation 1
                             orbitOrigin = planetPos;
                             orbitTheta = Math.atan2( playerFromPlanet[1], playerFromPlanet[0] );
                             orbitRadius = R;
@@ -224,12 +235,21 @@ export let tickGameState = (oldState: GameState): GameState => {
 
             if( playerCanJump || norm[1] < -0.1 ) {
                 if( worldSampleResult[2] < 1.5 ) {
-                    groundRot = Math.atan2(norm[0], -norm[1]);
+                    groundRot = Math.atan2(worldSampleResult[4], -worldSampleResult[5]);
                 } else {
                     groundRot = radsLerp(newState.playerRot, 0, 0.25);
                     if( playerCanJump > 0 ) playerCanJump--;
                 }
                 if( worldSampleResult[2] < 1.0 ) {
+                    if( !playerCanJump ) {
+                        if( playerLandedOnce ) {
+                            //zzfx(...[1.03,,100,,.03,.08,4,1.17,8.6,-0.4,,,,,,.1,,.78,.03,.45]);
+                            zzfx(...[2,,80,.01,.03,.18,1,.3,-0.2,-11.6,,,,,,,,,.01]); // Random 289
+                            //zzfx(...[1.48,,348,,,.4,3,2.1,,,,,,.6,9,.6,.04,,,.44]); // Explosion 193
+                        } else {
+                            playerLandedOnce = Bool.True;
+                        }
+                    }
                     playerVel = v2Reflect(playerVel, norm, 0, 1);
                     newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
                     playerCanJump = k_lateJumpTicks;
@@ -262,15 +282,13 @@ export let tickGameState = (oldState: GameState): GameState => {
     velocityLpf.push([playerVel[0], playerVel[1]]);
     if( velocityLpf.length > k_velocityLpfSize ) velocityLpf.shift();
     let velSum = velocityLpf.reduce((x,v)=>v2MulAdd(x,v,1),[0,0]);
-    if(v2Dot(playerVel,playerVel) > .1*.1) {
-        if( newState.cameraZoom > 0.7 ) {
-            newState.cameraZoom -= 0.01;
-        }
-    } else {
-        if( newState.cameraZoom < 1.5 ) {
-            newState.cameraZoom += 0.01;
-        }
+    if(v2Dot(playerVel,playerVel) > .5*.5) {
+        zoomed = Bool.True;
     }
+    if( zoomed && newState.cameraZoom > 0.7 ) {
+        newState.cameraZoom -= 0.01;
+    }
+
     newState.cameraPos = v2MulAdd( [newState.playerPos[0], newState.playerPos[1]], velSum, 10 / k_velocityLpfSize );
     newState.cameraPos[1] = Math.min(newState.cameraPos[1], 10);
 
@@ -285,7 +303,8 @@ export let tickGameState = (oldState: GameState): GameState => {
             if(newState.playerEndState == PlayerEndState.Won) {
                 playerVel = v2MulAdd([0,0], playerVel, 0.8);
             }
-            if(newState.canBeDone && dot < 3*3) {
+            if(newState.canBeDone && dot < 3*3 && newState.playerEndState != PlayerEndState.Won) {
+                zzfx(...[2,0,1,.1,.3,1,3,.6,,.6,30+5*(curLevel%2),,.35,,,,.18,.78,.1,.46]); // Music 200
                 newState.playerEndState = PlayerEndState.Won;
             }
         }
@@ -295,6 +314,9 @@ export let tickGameState = (oldState: GameState): GameState => {
                 curLevelObjectData[i][2] += ddd[1] * Math.min(1, .5 / dot);
             }
             if(dot < 3) {
+                let f = 180*Math.pow(2, ([0,2,5,7])[soundIndex] / 12);
+                soundIndex = (soundIndex + 1) % 4;
+                zzfx(...[,0,f,.05,,.25,1,1.67,,,,,,,9,.1,,.71,.15]);
                 curLevelObjectData.splice(i, 1);
                 i--;
             }
