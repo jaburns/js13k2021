@@ -40,7 +40,7 @@ let messages = [
 ];
 
 
-let hueForLevel = (level: number): number => (98765 * level * 16807 % 2147483647 - 1) / 2147483646;
+let hueForLevel = (level: number): number => (.85+level/3.7)%1;
 
 let hue2rgb = (p: number, q: number, t: number) => {
     if(t < 0) t += 1;

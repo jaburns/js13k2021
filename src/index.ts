@@ -9,7 +9,7 @@ declare const DEBUG: boolean;
 declare const k_tickMillis: number;
 
 let accTime = 0;
-let prevNow = performance.now();
+let prevNow = NaN;
 let curState: GameState;
 let prevState: GameState;
 let curLevel = DEBUG ? 1 : 0;
@@ -20,6 +20,7 @@ let frame = () => {
     requestAnimationFrame(frame);
 
     let newNow = performance.now();
+    if( isNaN(prevNow)) prevNow = newNow;
     let dt = Math.min( newNow - prevNow, 1000 );
     accTime += dt;
     prevNow = newNow;
@@ -40,6 +41,8 @@ let frame = () => {
         }
     }
 
+    renderState(curLevel, saveState, lerpGameState(prevState, curState, accTime / k_tickMillis));
+
     if( curState.fade < 0 ) {
         let selectedLevel = Math.min(27,saveState.length);
         saveStateLen = saveState.length;
@@ -56,10 +59,9 @@ let frame = () => {
             curLevel %= 28;
         }
         curState = prevState = newGameState(curLevel, selectedLevel);
+        prevNow = NaN;
         loadLevel(curLevel);
     }
-
-    renderState(curLevel, saveState, lerpGameState(prevState, curState, accTime / k_tickMillis));
 };
 
 let got = window.localStorage.getItem('galaxyrider');

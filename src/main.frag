@@ -105,22 +105,30 @@ void main() {
 
         vec3 color = vec3(0);
 
-        // ----- World color ---------------
+        // ----- Background+world color ---------------
 
         if( world.w > 0.0 ) {
             float edge = pow(max(0.,1.+.5*world.z),3.);
-            float x = smoothstep(.45,.55,noise(
-                edge > .01
-                    ? .05*worldPos + .1*vec2(world.y,-world.x)*edge + .1*world.xy*edge
-                    : .05*worldPos
-            ));
-            color = mix(.8*r.rgb,r.rgb,x);
-            color *= .25+.5*(1.-edge);
+
+            vec2 v = vec2(.3,0.);
+            vec2 p = edge > .01 ? worldPosBg + 20.*world.xy*edge : worldPosBg;
+            color = 
+                .25 * sampleBackground(.73,.9, p + v.xy) +
+                .25 * sampleBackground(.73,.9, p - v.xy) +
+                .25 * sampleBackground(.73,.9, p + v.yx) +
+                .25 * sampleBackground(.73,.9, p - v.yx);
+
+            vec2 p1 = edge > .01
+                ? .05*worldPos + .2*vec2(world.y,-world.x)*edge
+                : .05*worldPos;
+
+            float stripe = fract(2.*(sin(p1.x)+p1.y));
+
+            vec3 baseColor = (.5+.5*smoothstep(.2,.3,stripe)*smoothstep(.8,.7,stripe))*r.rgb;
+            color += world.w * (.1+.5*edge)*baseColor;
+        } else {
+            color = sampleBackground(.73,.9,worldPosBg);
         }
-
-        // ----- Background color ---------------
-
-        color = mix(sampleBackground(.73,.9,worldPosBg), color, world.w);
 
         // ----- Item color ---------------
 
