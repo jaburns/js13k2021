@@ -2,7 +2,7 @@ import { Bool, globalKeysDown, KeyCode } from './globals';
 import { GameState, lerpGameState, newGameState, PlayerEndState, tickGameState } from "./state";
 import { initRender, loadLevel, renderState } from "./render";
 import { tickSprite } from './sprite';
-import {startAudio} from './synth';
+import {setAudioFade, startAudio} from './synth';
 
 declare const C0: HTMLCanvasElement;
 declare const DEBUG: boolean;
@@ -42,6 +42,7 @@ let frame = () => {
     }
 
     renderState(curLevel, saveState, lerpGameState(prevState, curState, accTime / k_tickMillis));
+    setAudioFade(curState.fade);
 
     if( curState.fade < 0 ) {
         let selectedLevel = Math.min(27,saveState.length);

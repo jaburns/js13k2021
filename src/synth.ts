@@ -1,4 +1,4 @@
-const s_audioBufferSize: number = 4096;
+const s_audioBufferSize: number = 512;
 const s_audioSampleRate: number = 11025;
 
 let _sampleOffset = 0;
@@ -53,6 +53,9 @@ let bufNoiseOut = new Float32Array( s_audioBufferSize );
 let bufBass = new Float32Array( s_audioBufferSize );
 
 let vol: number = 0;
+let fade: number = 0;
+
+export let setAudioFade = (x: number): number => fade = x;
 
 let audioTick = ( y: Float32Array ) =>
 {
@@ -74,7 +77,7 @@ let audioTick = ( y: Float32Array ) =>
     mainLpf( 150 + 25 * Math.sin(0.00002*_sampleOffset), bufNoise, bufNoiseOut );
 
     for (let i = 0; i < s_audioBufferSize; ++i) {
-        y[i] = vol * 0.3 * ( 0.5*bufNoiseOut[i] + 0.3*bufBass[i]); // Math.min(1,Math.max(-1,bufBass[i]));
+        y[i] = fade * vol * 0.3 * ( 0.5*bufNoiseOut[i] + 0.3*bufBass[i]); // Math.min(1,Math.max(-1,bufBass[i]));
     }
 
     if( vol < 1 ) vol += 0.1;
