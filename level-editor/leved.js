@@ -6,7 +6,7 @@ const ctx = canvas.getContext('2d');
 let scale = 21; // k_baseScale
 let mousedown = false;
 let grabbedObj = null;
-let grabbedExt = false;
+let grabbedExt = 0;
 let grabOffset = [0,0];
 let latestObj = -1;
 
@@ -38,10 +38,11 @@ const crosshair = (x, y) => {
 };
 
 const renderCircle = obj => {
+    const pad = obj[1]==1 ? -1 : 1;
     ctx.save();
     ctx.translate(obj[2], obj[3]);
     ctx.beginPath();
-    ctx.arc(0, 0, obj[4], 0, 2*Math.PI);
+    ctx.arc(0, 0, obj[4]+pad, 0, 2*Math.PI);
     ctx.fill();
     ctx.restore();
 };
@@ -62,6 +63,7 @@ const renderBlackHole = obj => {
 };
 
 const renderCapsule = obj => {
+    const pad = obj[1]==1 ? -1 : 1;
     ctx.save();
     ctx.translate(obj[2], obj[3]);
     const d = Math.hypot(obj[6]-obj[3], obj[5]-obj[2]);
@@ -71,17 +73,18 @@ const renderCapsule = obj => {
         let x = (i/100)*d;
         let r = obj[4] + (i/100)*(obj[7]-obj[4]);
         ctx.beginPath();
-        ctx.arc(x, 0, r, 0, 2*Math.PI);
+        ctx.arc(x, 0, r+pad, 0, 2*Math.PI);
         ctx.fill();
     }
     ctx.restore();
 };
 
 const renderRect = obj => {
+    const pad = obj[1]==1 ? -1 : 1;
     ctx.save();
     ctx.translate(obj[2], obj[3]);
     ctx.rotate(obj[6]);
-    ctx.fillRect(-obj[4]/2, -obj[5]/2, obj[4], obj[5]);
+    ctx.fillRect(-obj[4]/2 - pad/2, -obj[5]/2 - pad/2, obj[4] + pad, obj[5] + pad);
     ctx.restore();
 };
 
@@ -112,7 +115,18 @@ const render = () => {
             }
         }
         crosshair(obj[2], obj[3]);
-        if( obj[0] == 1 ) crosshair(obj[5], obj[6]);
+        if( obj[0] == 0 ) {
+            crosshair(obj[2], obj[3] - obj[4]);
+        } else if( obj[0] == 1 ) {
+            crosshair(obj[2], obj[3] - obj[4]);
+            crosshair(obj[5], obj[6]);
+            crosshair(obj[5], obj[6] - obj[7]);
+        } else if( obj[0] == 2 ) {
+            crosshair(obj[2], obj[3] - obj[5]/2);
+            crosshair(obj[2], obj[3] + obj[5]/2);
+            crosshair(obj[2] - obj[4]/2, obj[3]);
+            crosshair(obj[2] + obj[4]/2, obj[3]);
+        }
     });
     ctx.strokeStyle = '#00f';
     crosshair(0, 0);
@@ -164,7 +178,7 @@ canvas.onmousedown = e => {
     const wy = ((e.offsetY - H/2) / scale) - camera[1];
 
     if( Math.hypot( wx, wy ) < 2 ) {
-        grabbedExt = false;
+        grabbedExt = 0;
         grabbedObj = 'spawn';
         mousedown = false;
         return;
@@ -174,7 +188,7 @@ canvas.onmousedown = e => {
         let dx = levelObjects[i][2] - wx;
         let dy = levelObjects[i][3] - wy;
         if( Math.hypot( dx, dy ) < 2 ) {
-            grabbedExt = false;
+            grabbedExt = 0;
             grabbedObj = levelObjects[i];
             latestObj = i;
             textarea.value = JSON.stringify(grabbedObj);
@@ -182,17 +196,69 @@ canvas.onmousedown = e => {
             mousedown = false;
         }
 
-        if( levelObjects[i][0] !== 1 ) continue;
-
-        dx = levelObjects[i][5] - wx;
-        dy = levelObjects[i][6] - wy;
-        if( Math.hypot( dx, dy ) < 2 ) {
-            grabbedExt = true;
-            grabbedObj = levelObjects[i];
-            latestObj = i;
-            textarea.value = JSON.stringify(grabbedObj);
-            grabOffset = [dx, dy];
-            mousedown = false;
+        if( levelObjects[i][0] === 0 ) {
+            dx = levelObjects[i][2] - wx;
+            dy = (levelObjects[i][3] - levelObjects[i][4]) - wy;
+            if( Math.hypot( dx, dy ) < 2 ) {
+                grabbedExt = 1;
+                grabbedObj = levelObjects[i];
+                latestObj = i;
+                textarea.value = JSON.stringify(grabbedObj);
+                grabOffset = [dx, dy];
+                mousedown = false;
+            }
+        }
+        else if( levelObjects[i][0] === 1 ) {
+            dx = levelObjects[i][5] - wx;
+            dy = levelObjects[i][6] - wy;
+            if( Math.hypot( dx, dy ) < 2 ) {
+                grabbedExt = 2;
+                grabbedObj = levelObjects[i];
+                latestObj = i;
+                textarea.value = JSON.stringify(grabbedObj);
+                grabOffset = [dx, dy];
+                mousedown = false;
+            }
+            dx = levelObjects[i][2] - wx;
+            dy = (levelObjects[i][3] - levelObjects[i][4]) - wy;
+            if( Math.hypot( dx, dy ) < 2 ) {
+                grabbedExt = 1;
+                grabbedObj = levelObjects[i];
+                latestObj = i;
+                textarea.value = JSON.stringify(grabbedObj);
+                grabOffset = [dx, dy];
+                mousedown = false;
+            }
+            dx = levelObjects[i][5] - wx;
+            dy = (levelObjects[i][6] - levelObjects[i][7]) - wy;
+            if( Math.hypot( dx, dy ) < 2 ) {
+                grabbedExt = 3;
+                grabbedObj = levelObjects[i];
+                latestObj = i;
+                textarea.value = JSON.stringify(grabbedObj);
+                grabOffset = [dx, dy];
+                mousedown = false;
+            }
+        }
+        else if( levelObjects[i][0] === 2 ) {
+            const obj = levelObjects[i];
+            ([
+                [4,obj[2], obj[3] - obj[5]/2],
+                [5,obj[2], obj[3] + obj[5]/2],
+                [6,obj[2] - obj[4]/2, obj[3]],
+                [7,obj[2] + obj[4]/2, obj[3]]
+            ]).forEach(([z,x,y]) => {
+                dx = x - wx;
+                dy = y - wy;
+                if( Math.hypot( dx, dy ) < 2 ) {
+                    grabbedExt = z;
+                    grabbedObj = obj;
+                    latestObj = i;
+                    textarea.value = JSON.stringify(grabbedObj);
+                    grabOffset = [dx, dy];
+                    mousedown = false;
+                }
+            });
         }
     }
 }
@@ -223,13 +289,35 @@ canvas.onmousemove = e => {
     else if( grabbedObj ) {
         const wx = ((e.offsetX - W/2) / scale) - camera[0];
         const wy = ((e.offsetY - H/2) / scale) - camera[1];
-        if( grabbedExt ) {
-            grabbedObj[5] = wx + grabOffset[0];
-            grabbedObj[6] = wy + grabOffset[1];
-        } else {
+
+        if( grabbedExt === 0 ) {
             grabbedObj[2] = wx + grabOffset[0];
             grabbedObj[3] = wy + grabOffset[1];
+        } else if( grabbedExt === 1 ) {
+            grabbedObj[4] = Math.abs(grabbedObj[3] - (wy + grabOffset[1]));
+        } else if( grabbedExt === 2 ) {
+            grabbedObj[5] = wx + grabOffset[0];
+            grabbedObj[6] = wy + grabOffset[1];
+        } else if( grabbedExt === 3 ) {
+            grabbedObj[7] = Math.abs(grabbedObj[6] - (wy + grabOffset[1]));
+        } else if( grabbedExt === 4 ) {
+            const dh = Math.abs(grabbedObj[3] - (wy + grabOffset[1])) - grabbedObj[5]/2;
+            grabbedObj[3] -= dh/4;
+            grabbedObj[5] += dh/2;
+        } else if( grabbedExt === 5 ) {
+            const dh = Math.abs(grabbedObj[3] - (wy + grabOffset[1])) - grabbedObj[5]/2;
+            grabbedObj[3] += dh/4;
+            grabbedObj[5] += dh/2;
+        } else if( grabbedExt === 6 ) {
+            const dw = Math.abs(grabbedObj[2] - (wx + grabOffset[0])) - grabbedObj[4]/2;
+            grabbedObj[2] -= dw/4;
+            grabbedObj[4] += dw/2;
+        } else if( grabbedExt === 7 ) {
+            const dw = Math.abs(grabbedObj[2] - (wx + grabOffset[0])) - grabbedObj[4]/2;
+            grabbedObj[2] += dw/4;
+            grabbedObj[4] += dw/2;
         }
+
         textarea.value = JSON.stringify(levelObjects[latestObj]);
         render();
     }
