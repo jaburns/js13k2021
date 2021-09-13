@@ -156,7 +156,7 @@ void main() {
             periodicNoise = 0;
             color += (1.-exp(-5.*itemD)) * itemR * 10.*samp;
         } else if( itemCanvasSample.r > 5./255. ) {
-            color += itemR*10.*vec3(1,1,.5)*exp(-(8.+2.*sin(.5*t.w+(worldPos.x+worldPos.y)))*itemD);
+            color += smoothstep(0.,.3,itemR)*10.*vec3(1,1,.5)*exp(-(8.+2.*sin(.5*t.w+(worldPos.x+worldPos.y)))*itemD);
         }
 
         // ----- Player color ---------------

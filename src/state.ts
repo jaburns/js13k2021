@@ -341,7 +341,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
     newState.cameraPos[1] = Math.min(newState.cameraPos[1], killHeight - 10);
 
     if( !curLevel ) {
-        //newState.tick = 1000; // Jump to menu
+        newState.tick = 1000; // Jump to menu
         newState.cameraPos = v2Lerp(newState.cameraPos, [155,32], smoothstep(100,300,newState.tick));
         let zzz = smoothstep(50,300,newState.tick);
         newState.cameraZoom = lerp(3, 0.4, 1-(1-zzz)*(1-zzz));
