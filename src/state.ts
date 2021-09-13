@@ -231,7 +231,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                 }
                 playerVel[0] += walkAccel;
                 if( !gravitySuppressionCountdown )
-                    playerVel[1] += k_gravity + ((keysDown[KeyCode.Down]&&playerVel[1]>0) as any) * k_pumpGravity;
+                    playerVel[1] += k_gravity + (keysDown[KeyCode.Down]&&playerVel[1]>0 ? k_pumpGravity : 0);
             }
 
             if( playerVel[1] > k_maxFallSpeed ) {
