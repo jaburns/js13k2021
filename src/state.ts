@@ -176,7 +176,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                 1 / k_orbitSpeed
             );
 
-            if( keysDown[KeyCode.Up] ) {
+            if( keysDown[KeyCode.Up] || keysDown[KeyCode.Down] ) {
                 zzfx(...[1.47,,115,.02,.07,,1,.37,6.3,,,,,,,,.03,.79,.01]); // Shoot 368
                 playerVel = v2MulAdd( [0,0], playerVel, k_orbitBoost);
                 //playerVel[1] -= k_jumpSpeed;
@@ -206,6 +206,8 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
 
                 walkAccel = keysDown[KeyCode.Left] ? -k_walkAccel :
                     keysDown[KeyCode.Right] ? k_walkAccel : 0;
+
+                zoomed |= walkAccel?1:0;
 
                 if( walkAccel * playerVel[0] < -.0001 ) {
                     walkAccel *= k_turnAroundMultiplier;
@@ -322,7 +324,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                 SpriteState.Jumping;
         }
 
-        if( curLevel && newState.playerPos[1] > killHeight ) {
+        if( curLevel && newState.playerPos[1] > killHeight || keysDown[KeyCode.Retry] ) {
             newState.playerEndState = PlayerEndState.Dead;
         }
     }
@@ -330,9 +332,6 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
     velocityLpf.push([playerVel[0], playerVel[1]]);
     if( velocityLpf.length > k_velocityLpfSize ) velocityLpf.shift();
     let velSum = velocityLpf.reduce((x,v)=>v2MulAdd(x,v,1),[0,0]);
-    if(v2Dot(playerVel,playerVel) > .5*.5) {
-        zoomed = Bool.True;
-    }
     if( curLevel && zoomed && newState.cameraZoom > 0.7 ) {
         newState.cameraZoom -= 0.01;
     }
@@ -341,7 +340,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
     newState.cameraPos[1] = Math.min(newState.cameraPos[1], killHeight - 10);
 
     if( !curLevel ) {
-        //newState.tick = 1000; // Jump to menu
+        newState.tick = 1000; // Jump to menu
         newState.cameraPos = v2Lerp(newState.cameraPos, [155,32], smoothstep(100,300,newState.tick));
         let zzz = smoothstep(50,300,newState.tick);
         newState.cameraZoom = lerp(3, 0.4, 1-(1-zzz)*(1-zzz));

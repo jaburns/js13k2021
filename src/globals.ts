@@ -8,6 +8,7 @@ export const enum KeyCode {
     Down = 40,
     Enter = 13,
     Esc = 27,
+    Retry = 82,
 }
 
 export let curLevelObjectData: any;
