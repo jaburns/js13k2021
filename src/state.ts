@@ -136,9 +136,9 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
             let fx = () => zzfx(...[1.56,.1,367,.01,.07,.08,1,.5,-4,,,,,,,,.09,0,.05]); // Shoot 441
             if( globalKeysDown[KeyCode.Left] ) fx(), newState.selectedLevel--;
             if( globalKeysDown[KeyCode.Right] ) fx(), newState.selectedLevel++;
-            if( globalKeysDown[KeyCode.Up] ) fx(), newState.selectedLevel-=7;
-            if( globalKeysDown[KeyCode.Down] ) fx(), newState.selectedLevel+=7;
-            newState.selectedLevel = Math.max(0,Math.min(Math.min(20,saveStateLen),newState.selectedLevel));
+            if( globalKeysDown[KeyCode.Up] ) fx(), newState.selectedLevel-=6;
+            if( globalKeysDown[KeyCode.Down] ) fx(), newState.selectedLevel+=6;
+            newState.selectedLevel = Math.max(0,Math.min(Math.min(17,saveStateLen),newState.selectedLevel));
             if( globalKeysDown[KeyCode.Enter] ) {
                 zzfx(...[2,0,1,.1,.3,1,3,.6,,.6,30+5*(curLevel%2),,.35,,,,.18,.78,.1,.46]); // Music 200
                 newState.playerEndState = PlayerEndState.Won;
@@ -265,7 +265,11 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                             orbitOmega = 
                                 k_orbitSpeed * Math.sqrt(v2Dot(playerVel, playerVel)) / R
                                 * Math.sign(v2Cross(playerVel, playerFromPlanet));
+                            if(keysDown[KeyCode.Down]) {
+                                keysDown[KeyCode.Down] = 0;
+                            }
                         }
+
                     }
                 }
             }
@@ -296,19 +300,20 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                     }
                     playerVel = v2Reflect(playerVel, norm, kind, 1);
                     newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
-                    playerCanJump = k_lateJumpTicks;
-
-                    if( kind > .5 )
+                    if( kind > .5 ) {
                         zzfx(...[1.5,,355,.03,,.45,1,.9,,,120,.19,.06,.2,6.9,,,.9,.02]); // Powerup 445
+                    } else {
+                        playerCanJump = k_lateJumpTicks;
+                    }
                 }
             } else {
                 groundRot = radsLerp(newState.playerRot, 0, 0.25);
                 if( worldSampleResult[2] < 1.0 ) {
                     playerVel = v2Reflect(playerVel, norm, kind, 1);
                     newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
-
-                    if( kind > .5 )
+                    if( kind > .5 ) {
                         zzfx(...[1.5,,355,.03,,.45,1,.9,,,120,.19,.06,.2,6.9,,,.9,.02]); // Powerup 445
+                    }
                 }
             }
         }

@@ -35,7 +35,8 @@ let messages = [
     'Use the arrows',
     'Use the ramp',
     'Use momentum',
-    'Press down to become heavy','','','',
+    'Press down to become heavy',
+    'Press R to restart','','',
     'Use the black hole','','','','','','',
     'Use the rubber block',
 ];
@@ -261,7 +262,7 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
 
         c.restore();
 
-        for( let i = 0; i < 21; ++i ) {
+        for( let i = 0; i < 18; ++i ) {
             c.save();
             c.translate(
                 k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
@@ -272,9 +273,9 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
             c.fillStyle = c.strokeStyle = i==state.selectedLevel ? '#00f' : i > saveState.length ? '#003' : '#007';
 
             c.lineWidth = 21*(i==state.selectedLevel ? 1 : .25);
-            let col = i % 7;
-            let row = (i / 7) | 0;
-            let x = 108+col*14;
+            let col = i % 6;
+            let row = (i / 6) | 0;
+            let x = 115+col*14;
             let y = 33+row*10;
             c.strokeRect(21*x, 21*y, 21*12, 21*8);
 

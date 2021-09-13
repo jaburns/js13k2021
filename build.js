@@ -26,9 +26,6 @@ const levelsJson = [
     require('./src/level16.json'),
     require('./src/level17.json'),
     require('./src/level18.json'),
-    require('./src/level19.json'),
-    require('./src/level20.json'),
-    require('./src/level21.json'),
 ];
 
 const DEBUG = process.argv.indexOf('--debug') >= 0;
