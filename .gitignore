@@ -3,3 +3,4 @@ build/
 out.zip
 ref*.png
 src/*.gen.ts
+generated-level-sdf.ts

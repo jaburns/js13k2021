@@ -1,7 +1,7 @@
 import {
     gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_TEXTURE_MAG_FILTER, gl_TEXTURE_WRAP_S, gl_TEXTURE_WRAP_T, 
     gl_UNSIGNED_BYTE, gl_RGBA, gl_CLAMP_TO_EDGE, gl_NEAREST, gl_ARRAY_BUFFER, gl_STATIC_DRAW, gl_VERTEX_SHADER, 
-    gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0, gl_TEXTURE1 
+    gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_TEXTURE1 
 } from "./glConsts";
 import { renderSprite } from './sprite';
 import { curLevelObjectData, loadLevelData, ticksToTime, Vec2 } from './globals';
@@ -18,8 +18,6 @@ declare const k_baseScale: number;
 
 let canTexS: WebGLTexture;
 let canTexT: WebGLTexture;
-let sampleTex: WebGLTexture;
-let sampleFb: WebGLFramebuffer;
 let fullScreenTriVertBuffer: WebGLBuffer;
 let shader: WebGLProgram;
 
@@ -95,18 +93,6 @@ export let initRender = (): void => {
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_CLAMP_TO_EDGE);
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_CLAMP_TO_EDGE);
 
-    sampleTex = g.createTexture()!;
-    g.bindTexture(gl_TEXTURE_2D, sampleTex);
-    g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, 2, 1, 0, gl_RGBA, gl_FLOAT, null);
-    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_NEAREST);
-    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_NEAREST); 
-    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_CLAMP_TO_EDGE);
-    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_CLAMP_TO_EDGE);
-
-    sampleFb = g.createFramebuffer()!;
-    g.bindFramebuffer( gl_FRAMEBUFFER, sampleFb );
-    g.framebufferTexture2D( gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0, gl_TEXTURE_2D, sampleTex, 0 );
-
     fullScreenTriVertBuffer = g.createBuffer()!;
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     g.bufferData( gl_ARRAY_BUFFER, Uint8Array.of(1, 1, 1, 128, 128, 1), gl_STATIC_DRAW );
@@ -145,26 +131,7 @@ export let loadLevel = (level: number): void => {
     g.useProgram(shader);
 };
 
-export let requestWorldSample = (pos: Vec2): void => {
-    g.bindFramebuffer(gl_FRAMEBUFFER, sampleFb);
-
-    g.bindTexture(gl_TEXTURE_2D, null);
-
-    g.uniform4f(g.getUniformLocation(shader, 't'), pos[0], pos[1], 0, 0);
-
-    g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
-    let posLoc = g.getAttribLocation( shader, 'a' );
-    g.enableVertexAttribArray( posLoc );
-    g.vertexAttribPointer( posLoc, 2, gl_BYTE, false, 0, 0 );
-    g.drawArrays( gl_TRIANGLES, 0, 3 );
-};
-
-export let readWorldSample = (): void =>
-    g.readPixels(0, 0, 2, 1, gl_RGBA, gl_FLOAT, worldSampleResult);
-
 export let renderState = (curLevel: number, saveState: number[], state: GameState): void => {
-    g.bindFramebuffer(gl_FRAMEBUFFER, null);
-
     c.fillStyle='#000';
     c.fillRect(0,0,k_fullWidth, k_fullHeight);
 

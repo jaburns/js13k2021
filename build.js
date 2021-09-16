@@ -84,6 +84,9 @@ const hashIdentifiers = js =>
 const generateShaderFile = () =>
 {
     const levels = levelsJson.map(compileLevelShader).join('\n');
+    const levelsJs = levelsJson.map(compileLevelShaderJs).join('\n');
+
+    fs.writeFileSync('generated-level-sdf.ts', levelsJs);
 
     sh.mkdir( '-p', 'shadersTmp' );
     sh.ls( 'src' ).forEach( x =>
@@ -137,7 +140,9 @@ const shortenNumber = (x, glsl) => {
     return sp.join('.');
 }
 
-const compileLevelShader = (levelObjects, idx) => {
+const doCompileLevelShader = (levelObjects, idx, js) => {
+    levelObjects = JSON.parse(JSON.stringify(levelObjects));
+
     const shapeFn = obj => {
         const num = x => shortenNumber(x, true);
         if( obj[0] == 0 ) {
@@ -151,34 +156,41 @@ const compileLevelShader = (levelObjects, idx) => {
         }
     };
 
-    const lines = [
-        `vec2 M${idx.toString(36).toUpperCase()}(vec2 p) {`,
-        '    vec2 d = vec2(-10000);'
-    ];
+    const lines = js ? [
+            `let levelSdf_M${idx.toString(36).toUpperCase()} = (p: Vec2): Vec2 => {`,
+            '    let d: Vec2 = [-10000, -10000];'
+        ]
+        : [
+            `vec2 M${idx.toString(36).toUpperCase()}(vec2 p) {`,
+            '    vec2 d = vec2(-10000);'
+        ];
 
-    let comp = 'x';
+    let comp;
 
     levelObjects.sort((x,y) => x[1] - y[1]);
     levelObjects.forEach(obj => {
         if( obj[0] === 3 ) return; // 3 is item
         if( obj[0] < 0 ) {
             obj[0] = -1 - obj[0];
-            comp = 'y';
+            comp = js ? '[1]' : '.y';
         } else {
-            comp = 'x';
+            comp = js ? '[0]' : '.x';
         }
         if( obj[1] === 1 ) {
-            lines.push(`    d.${comp} = roundMerge(d.${comp}, ${shapeFn(obj)});`);
+            lines.push(`    d${comp} = roundMerge(d${comp}, ${shapeFn(obj)});`);
         } else {
-            lines.push(`    d.${comp} = max(d.${comp}, -${shapeFn(obj)});`);
+            lines.push(`    d${comp} = max(d${comp}, -${shapeFn(obj)});`);
         }
     });
 
-    lines.push('    return -1.-d;');
+    lines.push(js ? '    return [-1-d[0],-1-d[1]];' : '    return -1.-d;');
     lines.push('}');
 
     return lines.join('\n');
-}
+};
+
+const compileLevelShader = (levelObjects, idx) => doCompileLevelShader(levelObjects, idx, false);
+const compileLevelShaderJs = (levelObjects, idx) => doCompileLevelShader(levelObjects, idx, true);
 
 const getLevelsJs = () =>
     levelsJson.map( x =>

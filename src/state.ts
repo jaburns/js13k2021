@@ -1,5 +1,4 @@
-import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, zzfx, smoothstep, ticksToTime } from "./globals";
-import { readWorldSample, requestWorldSample, worldSampleResult } from "./render";
+import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, zzfx, smoothstep, sampleLevel } from "./globals";
 import { SpriteState } from "./sprite";
 
 declare const k_orbitSpeed: number;
@@ -244,8 +243,6 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
             newState.playerPos[0] += playerVel[0];
             newState.playerPos[1] += playerVel[1];
 
-            requestWorldSample(newState.playerPos);
-
             playerFromPlanet = 0;
             for( let i = 0; i < curLevelObjectData.length; ++i ) {
                 if( curLevel && curLevelObjectData[i][0] == 2 ) { 
@@ -277,7 +274,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                 orbitRadius = 0;
             }
 
-            readWorldSample();
+            let worldSampleResult = sampleLevel(curLevel, newState.playerPos);
             norm = [worldSampleResult[0], worldSampleResult[1]];
             let kind = worldSampleResult[3];
 
