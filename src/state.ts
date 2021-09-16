@@ -1,4 +1,4 @@
-import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, zzfx, smoothstep, sampleLevel } from "./globals";
+import { v2MulAdd, Bool, globalKeysDown, KeyCode, lerp, v2Lerp, Vec2, v2Reflect, radsLerp, v2Dot, v2Cross, curLevelObjectData, smoothstep, sampleLevel, zzfxG, zzfxP } from "./globals";
 import { SpriteState } from "./sprite";
 
 declare const k_orbitSpeed: number;
@@ -103,6 +103,19 @@ export let lerpGameState = (a: GameState, b: GameState, t: number): GameState =>
     selectedLevel: b.selectedLevel,
 });
 
+let sndStomp = zzfxG(...[1.56,.1,367,.01,.07,.08,1,.5,-4,,,,,,,,.09,0,.05]); // Shoot 441
+let sndFinish0 = zzfxG(...[2,0,1,.1,.3,1,3,.6,,.6,30,,.35,,,,.18,.78,.1,.46]); // Music 200
+let sndFinish1 = zzfxG(...[2,0,1,.1,.3,1,3,.6,,.6,35,,.35,,,,.18,.78,.1,.46]); // Music 200
+let sndDots = [0,1,2,3].map(soundIndex => {
+    let f = 180*Math.pow(2, ([0,2,5,7])[soundIndex] / 12);
+    return zzfxG(...[,0,f,.05,,.25,1,1.67,,,,,,,9,.1,,.71,.15]);
+});
+let sndRubber = zzfxG(...[1.5,,355,.03,,.45,1,.9,,,120,.19,.06,.2,6.9,,,.9,.02]); // Powerup 445
+let sndLand = zzfxG(...[2,,80,.01,.03,.18,1,.3,-0.2,-11.6,,,,,,,,,.01]); // Random 289
+let sndHole = zzfxG(...[1.08,,79,.05,.49,.67,,.45,,,1,.1,.16,,,.1,,.64,.04,.28]); // Powerup 370 - Mutation 1
+let sndOllie = zzfxG(...[1.43,,1487,,.03,.12,,.61,45,2.5,,.03,,.7,,.2,.05]);
+let sndExitHole = zzfxG(...[1.47,,115,.02,.07,,1,.37,6.3,,,,,,,,.03,.79,.01]); // Shoot 368
+
 export let tickGameState = (oldState: GameState, curLevel: number, saveState: number[], saveStateLen: number): GameState => {
     let newState = lerpGameState(oldState, oldState, 0);
     let groundRot = 0;
@@ -132,14 +145,14 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
         }
 
         if( newState.tick > 200 && newState.playerEndState != PlayerEndState.Won ) {
-            let fx = () => zzfx(...[1.56,.1,367,.01,.07,.08,1,.5,-4,,,,,,,,.09,0,.05]); // Shoot 441
+            let fx = () => zzfxP(sndStomp);
             if( globalKeysDown[KeyCode.Left] ) fx(), newState.selectedLevel--;
             if( globalKeysDown[KeyCode.Right] ) fx(), newState.selectedLevel++;
             if( globalKeysDown[KeyCode.Up] ) fx(), newState.selectedLevel-=6;
             if( globalKeysDown[KeyCode.Down] ) fx(), newState.selectedLevel+=6;
             newState.selectedLevel = Math.max(0,Math.min(Math.min(17,saveStateLen),newState.selectedLevel));
             if( globalKeysDown[KeyCode.Enter] ) {
-                zzfx(...[2,0,1,.1,.3,1,3,.6,,.6,30+5*(curLevel%2),,.35,,,,.18,.78,.1,.46]); // Music 200
+                zzfxP(sndFinish0);
                 newState.playerEndState = PlayerEndState.Won;
             }
         }
@@ -176,7 +189,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
             );
 
             if( keysDown[KeyCode.Up] || keysDown[KeyCode.Down] ) {
-                zzfx(...[1.47,,115,.02,.07,,1,.37,6.3,,,,,,,,.03,.79,.01]); // Shoot 368
+                zzfxP(sndExitHole);
                 playerVel = v2MulAdd( [0,0], playerVel, k_orbitBoost);
                 //playerVel[1] -= k_jumpSpeed;
                 orbitOrigin = 0;
@@ -193,11 +206,11 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                 if( keysDown[KeyCode.Up] && playerCanJump ) {
                     playerVel[1] -= k_jumpSpeed;
                     playerCanJump = 0;
-                    zzfx(...[1.43,,1487,,.03,.12,,.61,45,2.5,,.03,,.7,,.2,.05]);
+                    zzfxP(sndOllie);
                 }
 
                 if( keysDown[KeyCode.Down] && !stompKeyDown ) {
-                    zzfx(...[1.56,.1,367,.01,.07,.08,1,.5,-4,,,,,,,,.09,0,.05]); // Shoot 441
+                    zzfxP(sndStomp);
                     if( playerVel[1] < k_stompSpeed ) {
                         playerVel[1] = k_stompSpeed;
                     }
@@ -255,7 +268,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
 
                         if( !orbitRadius && v2Dot(playerFromPlanet, playerVel) > 0 ) {
                             let R = Math.sqrt( playerDistFromPlanetSqr );
-                            zzfx(...[1.08,,79,.05,.49,.67,,.45,,,1,.1,.16,,,.1,,.64,.04,.28]); // Powerup 370 - Mutation 1
+                            zzfxP(sndHole);
                             orbitOrigin = planetPos;
                             orbitTheta = Math.atan2( playerFromPlanet[1], playerFromPlanet[0] );
                             orbitRadius = R;
@@ -290,7 +303,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                     if( !playerCanJump ) {
                         if( playerLandedOnce ) {
                             if( kind < .5 )
-                                zzfx(...[2,,80,.01,.03,.18,1,.3,-0.2,-11.6,,,,,,,,,.01]); // Random 289
+                                zzfxP(sndLand);
                         } else {
                             playerLandedOnce = Bool.True;
                         }
@@ -298,7 +311,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                     playerVel = v2Reflect(playerVel, norm, kind, 1);
                     newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
                     if( kind > .5 ) {
-                        zzfx(...[1.5,,355,.03,,.45,1,.9,,,120,.19,.06,.2,6.9,,,.9,.02]); // Powerup 445
+                        zzfxP(sndRubber);
                     } else {
                         playerCanJump = k_lateJumpTicks;
                     }
@@ -309,7 +322,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                     playerVel = v2Reflect(playerVel, norm, kind, 1);
                     newState.playerPos = v2MulAdd(newState.playerPos, norm, 1.0 - worldSampleResult[2]);
                     if( kind > .5 ) {
-                        zzfx(...[1.5,,355,.03,,.45,1,.9,,,120,.19,.06,.2,6.9,,,.9,.02]); // Powerup 445
+                        zzfxP(sndRubber);
                     }
                 }
             }
@@ -369,7 +382,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                 playerVel = v2MulAdd([0,0], playerVel, 0.8);
             }
             if(newState.canBeDone && dot < 3*3 && newState.playerEndState != PlayerEndState.Won) {
-                zzfx(...[2,0,1,.1,.3,1,3,.6,,.6,30+5*(curLevel%2),,.35,,,,.18,.78,.1,.46]); // Music 200
+                zzfxP(curLevel % 2 ? sndFinish1 : sndFinish0);
                 newState.playerEndState = PlayerEndState.Won;
                 if( !saveState[curLevel-1] || newState.tick <= saveState[curLevel-1] ) {
                     saveState[curLevel-1] = newState.tick-1;
@@ -382,9 +395,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
                 curLevelObjectData[i][2] += ddd[1] * Math.min(1, .5 / dot);
             }
             if(dot < 3) {
-                let f = 180*Math.pow(2, ([0,2,5,7])[soundIndex] / 12);
-                soundIndex = (soundIndex + 1) % 4;
-                zzfx(...[,0,f,.05,,.25,1,1.67,,,,,,,9,.1,,.71,.15]);
+                zzfxP(sndDots[soundIndex]);
                 curLevelObjectData.splice(i, 1);
                 i--;
             }

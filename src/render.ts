@@ -1,7 +1,7 @@
 import {
     gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_TEXTURE_MAG_FILTER, gl_TEXTURE_WRAP_S, gl_TEXTURE_WRAP_T, 
     gl_UNSIGNED_BYTE, gl_RGBA, gl_CLAMP_TO_EDGE, gl_NEAREST, gl_ARRAY_BUFFER, gl_STATIC_DRAW, gl_VERTEX_SHADER, 
-    gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_TEXTURE1 
+    gl_FRAGMENT_SHADER, gl_BYTE, gl_TRIANGLES, gl_TEXTURE0, gl_FLOAT, gl_FRAMEBUFFER, gl_TEXTURE1, gl_REPEAT, gl_COLOR_ATTACHMENT0, gl_TEXTURE2, gl_TEXTURE3, gl_TEXTURE4, gl_LINEAR 
 } from "./glConsts";
 import { renderSprite } from './sprite';
 import { curLevelObjectData, loadLevelData, ticksToTime, Vec2 } from './globals';
@@ -18,8 +18,12 @@ declare const k_baseScale: number;
 
 let canTexS: WebGLTexture;
 let canTexT: WebGLTexture;
+let bgTex0: WebGLTexture;
+let bgTex1: WebGLTexture;
+let bgTex2: WebGLTexture;
 let fullScreenTriVertBuffer: WebGLBuffer;
 let shader: WebGLProgram;
+let levelShaders: WebGLProgram[] = [];
 
 let greenGrad = c.createLinearGradient(-1, 0, 1, 0);
 greenGrad.addColorStop(0, "#000");
@@ -29,7 +33,7 @@ blueGrad.addColorStop(0, "#000");
 blueGrad.addColorStop(1, "#00f");
 
 let messages = [
-    '',
+    'Click to play',
     'Use the arrows',
     'Use the ramp',
     'Use momentum',
@@ -93,41 +97,95 @@ export let initRender = (): void => {
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_CLAMP_TO_EDGE);
     g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_CLAMP_TO_EDGE);
 
+    bgTex0 = g.createTexture()!;
+    g.bindTexture(gl_TEXTURE_2D, bgTex0);
+    g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, 2048, 2048, 0, gl_RGBA, gl_UNSIGNED_BYTE, null);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_LINEAR);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_LINEAR); 
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_REPEAT);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_REPEAT);
+
+    bgTex1 = g.createTexture()!;
+    g.bindTexture(gl_TEXTURE_2D, bgTex1);
+    g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, 2048, 2048, 0, gl_RGBA, gl_UNSIGNED_BYTE, null);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_LINEAR);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_LINEAR); 
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_REPEAT);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_REPEAT);
+
+    bgTex2 = g.createTexture()!;
+    g.bindTexture(gl_TEXTURE_2D, bgTex2);
+    g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, 2048, 2048, 0, gl_RGBA, gl_UNSIGNED_BYTE, null);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MIN_FILTER, gl_LINEAR);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_MAG_FILTER, gl_LINEAR); 
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_S, gl_REPEAT);
+    g.texParameteri(gl_TEXTURE_2D, gl_TEXTURE_WRAP_T, gl_REPEAT);
+
     fullScreenTriVertBuffer = g.createBuffer()!;
     g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
     g.bufferData( gl_ARRAY_BUFFER, Uint8Array.of(1, 1, 1, 128, 128, 1), gl_STATIC_DRAW );
+
+    for( let i = -1; i <= 18; ++i ) {
+        let vs = g.createShader( gl_VERTEX_SHADER )!;
+        let fs = g.createShader( gl_FRAGMENT_SHADER )!;
+        let shader = g.createProgram()!;
+
+        g.shaderSource( vs, main_vert );
+        g.compileShader( vs );
+        if( i >= 0 ) {
+            g.shaderSource( fs, 'precision highp float;'+main_frag.replace('M'+i.toString(36).toUpperCase(),'M') );
+        } else {
+            g.shaderSource( fs, 'precision highp float;\n#define BG\n'+main_frag.replace('M0','M') );
+        }
+        g.compileShader( fs );
+
+        if( DEBUG )
+        {
+            let log = g.getShaderInfoLog(fs);
+            if( log === null || log.length > 0 ) { 
+                console.log( 'Shader info log:\n' + log );
+                if( log !== null && log.indexOf('ERROR') >= 0 ) {
+                    console.error( main_frag.split('\n').map((x,i) => `${i+1}: ${x}`).join('\n') );
+                }
+            }
+        }
+
+        g.attachShader( shader, vs );
+        g.attachShader( shader, fs );
+        g.linkProgram( shader );
+        g.deleteShader( fs );
+        g.deleteShader( vs );
+
+        levelShaders.push( shader );
+    }
+
+    let bgShader = levelShaders.shift()!;
+    g.useProgram( bgShader );
+    let posLoc = g.getAttribLocation( bgShader, 'a' );
+
+    let makeBgTex = (tex: WebGLTexture, a: number, b: number) => {
+        let fb = g.createFramebuffer()!;
+        g.bindFramebuffer( gl_FRAMEBUFFER, fb );
+        g.framebufferTexture2D( gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0, gl_TEXTURE_2D, tex, 0 );
+        g.viewport(0,0,2048,2048);
+        g.uniform4f(g.getUniformLocation(bgShader, 't'), a,b,0,0);
+        g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
+        g.enableVertexAttribArray( posLoc );
+        g.vertexAttribPointer( posLoc, 2, gl_BYTE, false, 0, 0 );
+        g.drawArrays( gl_TRIANGLES, 0, 3 );
+    };
+
+    makeBgTex(bgTex0, .73, .9);
+    makeBgTex(bgTex1, 0, 1);
+    makeBgTex(bgTex2, .3, 1);
+
+    g.bindFramebuffer( gl_FRAMEBUFFER, null );
+    g.viewport(0,0,k_fullWidth,k_fullHeight);
 };
 
 export let loadLevel = (level: number): void => {
     loadLevelData( level );
-    g.deleteProgram( shader );
-
-    let vs = g.createShader( gl_VERTEX_SHADER )!;
-    let fs = g.createShader( gl_FRAGMENT_SHADER )!;
-    shader = g.createProgram()!;
-
-    g.shaderSource( vs, main_vert );
-    g.compileShader( vs );
-    g.shaderSource( fs, 'precision highp float;'+main_frag.replace('M'+level.toString(36).toUpperCase(),'M') );
-    g.compileShader( fs );
-
-    if( DEBUG )
-    {
-        let log = g.getShaderInfoLog(fs);
-        if( log === null || log.length > 0 ) { 
-            console.log( 'Shader info log:\n' + log );
-            if( log !== null && log.indexOf('ERROR') >= 0 ) {
-                console.error( main_frag.split('\n').map((x,i) => `${i+1}: ${x}`).join('\n') );
-            }
-        }
-    }
-
-    g.attachShader( shader, vs );
-    g.attachShader( shader, fs );
-    g.linkProgram( shader );
-    g.deleteShader( fs );
-    g.deleteShader( vs );
-
+    shader = levelShaders[level];
     g.useProgram(shader);
 };
 
@@ -198,9 +256,15 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
         c.lineWidth = 8;
         c.lineJoin = 'round';
         c.fillStyle = '#0f0';
-        c.font = 'italic bold 42px Arial';
-        c.strokeText(messages[curLevel], -315, -189);
-        c.fillText(messages[curLevel], -315, -189);
+        if( curLevel ) {
+            c.font = 'italic bold 42px Arial';
+            c.strokeText(messages[curLevel], -315, -189);
+            c.fillText(messages[curLevel], -315, -189);
+        } else {
+            c.font = 'italic bold 24px Arial';
+            c.strokeText(messages[curLevel], -70, -90);
+            c.fillText(messages[curLevel], -70, -90);
+        }
 
         c.restore();
     }
@@ -270,8 +334,18 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
     g.bindTexture(gl_TEXTURE_2D, canTexS);
     g.texImage2D(gl_TEXTURE_2D, 0, gl_RGBA, gl_RGBA, gl_UNSIGNED_BYTE, C1);
 
+    g.activeTexture(gl_TEXTURE2);
+    g.bindTexture(gl_TEXTURE_2D, bgTex0);
+    g.activeTexture(gl_TEXTURE3);
+    g.bindTexture(gl_TEXTURE_2D, bgTex1);
+    g.activeTexture(gl_TEXTURE4);
+    g.bindTexture(gl_TEXTURE_2D, bgTex2);
+
     g.uniform1i(g.getUniformLocation(shader, 'T'), 0);
     g.uniform1i(g.getUniformLocation(shader, 'S'), 1);
+    g.uniform1i(g.getUniformLocation(shader, 'BG0'), 2);
+    g.uniform1i(g.getUniformLocation(shader, 'BG1'), 3);
+    g.uniform1i(g.getUniformLocation(shader, 'BG2'), 4);
     g.uniform4f(g.getUniformLocation(shader, 't'), state.cameraPos[0], state.cameraPos[1], state.cameraZoom, state.tick);
     g.uniform4f(g.getUniformLocation(shader, 's'), state.playerPos[0], state.playerPos[1], state.fade, state.canBeDone);
     g.uniform4fv(g.getUniformLocation(shader, 'r'), hslToRgb(hueForLevel(curLevel),.6,.6));

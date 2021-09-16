@@ -1,5 +1,8 @@
 uniform sampler2D T;
 uniform sampler2D S;
+uniform sampler2D BG0;
+uniform sampler2D BG1;
+uniform sampler2D BG2;
 uniform vec4 t;
 uniform vec4 s;
 uniform vec4 r;
@@ -11,7 +14,6 @@ float hash(vec2 p) {
     p = 17.*fract( p*.3183099+.1 );
     return fract( p.x*p.y*(p.x+p.y) );
 }
-int periodicNoise;
 float noiseFn(vec2 x) {
     vec2 i = floor(x);
     vec2 f = fract(x);
@@ -23,13 +25,16 @@ float noiseFn(vec2 x) {
     );
 }
 float noise(vec2 q) {
-    if(periodicNoise>0) q.x = .25*sin(q.x);
     mat2 m = mat2(.88,.48,-.48,.88);
     float f = .5*noiseFn( q *= 8. );
     f += .25*noiseFn( q = m*q*2.01 );
     f += .125*noiseFn( q = m*q*2.02 );
     f += .0625*noiseFn( q = m*q*2.03 );
     return f;
+}
+float periodicNoise(vec2 q) {
+    q.x = .25*sin(q.x);
+    return noise(q);
 }
 
 // ==================================================================================================
@@ -65,11 +70,11 @@ __LEVELS_GLSL__
 float mc(vec2 p){vec2 m=M(p);return min(m.x,m.y);}
 vec4 sampleWorld(vec2 p, float delta) { // Result: xy -> normal ; z -> dist ; w -> on/off, negative -> rubber
     vec2 eps = vec2(delta, 0);
-    vec2 center = M(p);
-    float a = mc(p - eps.xy), b = mc(p + eps.xy), c = mc(p - eps.yx), d = mc(p + eps.yx);
+    vec2 center = M(p + eps.yx);
+    float a = mc(p - eps.xy), b = mc(p + eps.xy), c = mc(p - eps.yx), d = min(center.x, center.y);
     return vec4(
         normalize(vec2(b - a, d - c)),
-        min(center.x, center.y),
+        d,
         .25*(float(a<=0.)+float(b<=0.)+float(c<=0.)+float(d<=0.)) * (center.y < center.x ? -1. : 1.)
     );
 }
@@ -85,22 +90,46 @@ vec3 sampleBackground(float a, float b, vec2 worldPosBg) {
         i_PURPLE_SPACE * noise(.0015 * worldPosBg+5.);
 }
 
-void main() {
-    periodicNoise = 0;
+vec3 sampleBackground0(vec2 worldPosBg) {
+    worldPosBg /= .2; worldPosBg /= 2048.; worldPosBg += 0.5;
+    return texture2D(BG0, worldPosBg).rgb;
+}
+vec3 sampleBackground1(vec2 worldPosBg) {
+    worldPosBg /= .2; worldPosBg /= 2048.; worldPosBg += 0.5;
+    return texture2D(BG1, worldPosBg).rgb;
+}
+vec3 sampleBackground2(vec2 worldPosBg) {
+    worldPosBg /= .2; worldPosBg /= 2048.; worldPosBg += 0.5;
+    return texture2D(BG2, worldPosBg).rgb;
+}
+/*
+ 
+worldPosBg = .2*(gl_FragCoord.xy - 0.5*vec(W,H)) + .2*t.xy;
+/.2
 
-    if( t.z == 0.0 ) {
-        vec2 samp = M(t.xy);
-        gl_FragColor = gl_FragCoord.x < 1.
-            ? vec4(sampleWorld(t.xy, .01).xyz, samp.y<samp.x ? 1. : 0.)
-            : sampleWorld(t.xy + vec2(0,.5), .01);
-    } else {
-        vec2 worldPos = (gl_FragCoord.xy - (0.5*vec2(k_fullWidth,k_fullHeight))),
+gl_FragCoord.xy - 0.5*vec(W,H) + t.xy
+
+
+*/
+void main() {
+//    if( t.z == 0.0 ) {
+//        vec2 samp = M(t.xy);
+//        gl_FragColor = gl_FragCoord.x < 1.
+//            ? vec4(sampleWorld(t.xy, .01).xyz, samp.y<samp.x ? 1. : 0.)
+//            : sampleWorld(t.xy + vec2(0,.5), .01);
+//    } else {
+        vec2 worldPos = gl_FragCoord.xy - 0.5*vec2(k_fullWidth,k_fullHeight),
              uv = gl_FragCoord.xy/vec2(k_fullWidth,k_fullHeight),
              worldPosBg;
         uv.y = 1.0 - uv.y;
         worldPos.y *= -1.0;
         worldPosBg = .2*worldPos + .2*t.xy;
         worldPos = worldPos / t.z / k_baseScale + t.xy;
+
+#ifdef BG
+        //gl_FragColor = vec4(gl_FragCoord.x/2048., gl_FragCoord.y/2048.,0.,1.);
+        gl_FragColor = vec4(sampleBackground(t.x, t.y, worldPosBg),1);
+#else
 
         vec4 itemCanvasSample = texture2D(T, uv),
              playerCanvasSample = texture2D(S, uv),
@@ -119,10 +148,10 @@ void main() {
                 vec2 v = vec2(.3,0.);
                 vec2 p = edge > .01 ? worldPosBg + 20.*world.xy*edge : worldPosBg;
                 color = 
-                    .25 * sampleBackground(.73,.9, p + v.xy) +
-                    .25 * sampleBackground(.73,.9, p - v.xy) +
-                    .25 * sampleBackground(.73,.9, p + v.yx) +
-                    .25 * sampleBackground(.73,.9, p - v.yx);
+                    .25 * sampleBackground0(p + v.xy) +
+                    .25 * sampleBackground0(p - v.xy) +
+                    .25 * sampleBackground0(p + v.yx) +
+                    .25 * sampleBackground0(p - v.yx);
 
                 vec2 p1 = edge > .01
                     ? .05*worldPos + .2*vec2(world.y,-world.x)*edge
@@ -134,7 +163,7 @@ void main() {
                 color += world.w * (.1+.5*edge)*baseColor;
             }
         } else {
-            color = sampleBackground(.73,.9,worldPosBg);
+            color = sampleBackground0(worldPosBg);
         }
 
         // ----- Item color ---------------
@@ -146,14 +175,12 @@ void main() {
             color += itemR * exp(-3.*itemD)*8. * i_PURPLE_SPACE;
             if (s.w > 0.5) {
                 float amount = clamp((itemCanvasSample.r - 30./255.) / (30./255.), 0., 1.);
-                color += amount * itemR * exp(-10.*length(itemP))*5. * sampleBackground(0.,1.,8.*vec2(atan(itemP.y, itemP.x) + 0.05*t.w, 5.*(itemR - 0.05*t.w)));
+                color += amount * itemR * exp(-10.*length(itemP))*5. * sampleBackground1(8.*vec2(atan(itemP.y, itemP.x) + 0.05*t.w, 5.*(itemR - 0.05*t.w)));
             }
         } else if( itemCanvasSample.r > 15./255. ) {
             color -= pow(itemR,2.);
             vec2 sampP = vec2(atan(itemP.y, itemP.x) + 0.05*t.w, 1.*(itemR - 0.01*t.w));
-            periodicNoise = 1;
-            vec3 samp = i_PURPLE_SPACE * mix(noise(sampP),noise(sampP+vec2(3.14/2.,0)),.5);
-            periodicNoise = 0;
+            vec3 samp = i_PURPLE_SPACE * mix(periodicNoise(sampP),periodicNoise(sampP+vec2(3.14/2.,0)),.5);
             color += (1.-exp(-5.*itemD)) * itemR * 10.*samp;
         } else if( itemCanvasSample.r > 5./255. ) {
             color += smoothstep(0.,.3,itemR)*10.*vec3(1,1,.5)*exp(-(8.+2.*sin(.5*t.w+(worldPos.x+worldPos.y)))*itemD);
@@ -171,7 +198,7 @@ void main() {
         }
         color += (
             vec3(.3)+
-            sampleBackground(.3,1.,worldPos+9.+0.05*t.w)
+            sampleBackground2(worldPos+9.+0.05*t.w)
         ) * (playerCanvasSample.g + .75*playerCanvasSample.b);
         if(playerCanvasSample.b > 0. &&  playerCanvasSample.b < .5 ) {
             color = mix( color, (10.*playerCanvasSample.b)*i_PURPLE_SPACE, .5 );
@@ -180,5 +207,6 @@ void main() {
         // --------------------------------------
        
         gl_FragColor = vec4(min(vec3(1),color) * s.z, 1);
-    }
+//  }
+#endif
 }
