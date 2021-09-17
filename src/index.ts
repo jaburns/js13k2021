@@ -54,7 +54,9 @@ let frame = () => {
             curLevel = curState.selectedLevel + 1;
         } else {
             if( curState.playerEndState == PlayerEndState.Won ) {
-                window.localStorage.setItem('galaxyrider', JSON.stringify(saveState));
+                try {
+                    window.localStorage.setItem('galaxyrider', JSON.stringify(saveState));
+                } catch(_) {}
                 curLevel++;
             }
             curLevel %= 19;
@@ -66,11 +68,13 @@ let frame = () => {
     }
 };
 
-let got = window.localStorage.getItem('galaxyrider');
-if( got ) {
-    saveState.length = 0;
-    saveState.push(...JSON.parse(got));
-}
+try {
+    let got = window.localStorage.getItem('galaxyrider');
+    if( got ) {
+        saveState.length = 0;
+        saveState.push(...JSON.parse(got));
+    }
+} catch(_) {}
 
 initRender();
 curState = prevState = newGameState(curLevel, Math.min(17,saveStateLen = saveState.length));
