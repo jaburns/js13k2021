@@ -396,6 +396,7 @@ export let tickGameState = (oldState: GameState, curLevel: number, saveState: nu
             }
             if(dot < 3) {
                 zzfxP(sndDots[soundIndex]);
+                soundIndex = (soundIndex + 1) % 4;
                 curLevelObjectData.splice(i, 1);
                 i--;
             }

@@ -78,6 +78,35 @@ let hslToRgb = (h: number, s: number, l: number) => {
 
 export let worldSampleResult = new Float32Array(8);
 
+let compileShader = (frag: string): WebGLProgram => {
+    let vs = g.createShader( gl_VERTEX_SHADER )!;
+    let fs = g.createShader( gl_FRAGMENT_SHADER )!;
+    let shader = g.createProgram()!;
+
+    g.shaderSource( vs, main_vert );
+    g.compileShader( vs );
+    g.shaderSource( fs, frag );
+    g.compileShader( fs );
+
+    if( DEBUG )
+    {
+        let log = g.getShaderInfoLog(fs);
+        if( log === null || log.length > 0 ) { 
+            console.log( 'Shader info log:\n' + log );
+            if( log !== null && log.indexOf('ERROR') >= 0 ) {
+                console.error( main_frag.split('\n').map((x,i) => `${i+1}: ${x}`).join('\n') );
+            }
+        }
+    }
+
+    g.attachShader( shader, vs );
+    g.attachShader( shader, fs );
+    g.linkProgram( shader );
+    g.deleteShader( fs );
+    g.deleteShader( vs );
+    return shader;
+};
+
 export let initRender = (): void => {
     g.getExtension('OES_texture_float');
 
@@ -126,37 +155,10 @@ export let initRender = (): void => {
     g.bufferData( gl_ARRAY_BUFFER, Uint8Array.of(1, 1, 1, 128, 128, 1), gl_STATIC_DRAW );
 
     for( let i = -1; i <= 18; ++i ) {
-        let vs = g.createShader( gl_VERTEX_SHADER )!;
-        let fs = g.createShader( gl_FRAGMENT_SHADER )!;
-        let shader = g.createProgram()!;
-
-        g.shaderSource( vs, main_vert );
-        g.compileShader( vs );
-        if( i >= 0 ) {
-            g.shaderSource( fs, 'precision highp float;'+main_frag.replace('M'+i.toString(36).toUpperCase(),'M') );
-        } else {
-            g.shaderSource( fs, 'precision highp float;\n#define BG\n'+main_frag.replace('M0','M') );
-        }
-        g.compileShader( fs );
-
-        if( DEBUG )
-        {
-            let log = g.getShaderInfoLog(fs);
-            if( log === null || log.length > 0 ) { 
-                console.log( 'Shader info log:\n' + log );
-                if( log !== null && log.indexOf('ERROR') >= 0 ) {
-                    console.error( main_frag.split('\n').map((x,i) => `${i+1}: ${x}`).join('\n') );
-                }
-            }
-        }
-
-        g.attachShader( shader, vs );
-        g.attachShader( shader, fs );
-        g.linkProgram( shader );
-        g.deleteShader( fs );
-        g.deleteShader( vs );
-
-        levelShaders.push( shader );
+        levelShaders.push( compileShader('precision highp float;' + (i >= 0 
+            ? main_frag.replace('M'+i.toString(36).toUpperCase(),'M')
+            : '\n#define BG\n'+main_frag.replace('M0','M') 
+        )));
     }
 
     let bgShader = levelShaders.shift()!;
