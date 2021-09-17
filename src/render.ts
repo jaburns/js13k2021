@@ -168,6 +168,8 @@ export let initRender = (): void => {
         g.bindFramebuffer( gl_FRAMEBUFFER, fb );
         g.framebufferTexture2D( gl_FRAMEBUFFER, gl_COLOR_ATTACHMENT0, gl_TEXTURE_2D, tex, 0 );
         g.viewport(0,0,2048,2048);
+        g.uniform4f(g.getUniformLocation(bgShader, 'P0'), 0,0,0,0);
+        g.uniform4f(g.getUniformLocation(bgShader, 'P1'), 1,1,1,1);
         g.uniform4f(g.getUniformLocation(bgShader, 't'), a,b,0,0);
         g.bindBuffer( gl_ARRAY_BUFFER, fullScreenTriVertBuffer );
         g.enableVertexAttribArray( posLoc );
@@ -340,6 +342,9 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
     g.bindTexture(gl_TEXTURE_2D, bgTex1);
     g.activeTexture(gl_TEXTURE4);
     g.bindTexture(gl_TEXTURE_2D, bgTex2);
+
+    g.uniform4f(g.getUniformLocation(shader, 'P0'), 0,0,0,0);
+    g.uniform4f(g.getUniformLocation(shader, 'P1'), 1,1,1,1);
 
     g.uniform1i(g.getUniformLocation(shader, 'T'), 0);
     g.uniform1i(g.getUniformLocation(shader, 'S'), 1);
