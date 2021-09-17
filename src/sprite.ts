@@ -99,6 +99,7 @@ export let tickSprite = (state: SpriteState): void => {
         if( (s_spriteFrameNum += 1) > 17 )
             s_spriteFrameNum = 17;
     }
+    s_spriteFrameNum = 11;
 };
 
 export let renderSprite = (state: GameState): void => {
@@ -123,10 +124,10 @@ export let renderSprite = (state: GameState): void => {
         if(frame[1]) {
             c.save();
             c.translate(
-                k_fullWidth/2 + (state.playerPos[0] - state.cameraPos[0]) * k_baseScale * state.cameraZoom,
-                k_fullHeight/2 + (state.playerPos[1] - state.cameraPos[1]) * k_baseScale * state.cameraZoom
+                k_fullWidth/2 + (155 - state.cameraPos[0]) * k_baseScale * state.cameraZoom,
+                k_fullHeight/2 + (42 - state.cameraPos[1]) * k_baseScale * state.cameraZoom
             );
-            c.scale(state.cameraZoom * k_spriteScale, state.cameraZoom * k_spriteScale);
+            c.scale(state.cameraZoom * k_spriteScale * 15, state.cameraZoom * k_spriteScale * 15);
             c.rotate(state.playerRot);
             c.translate(
                 state.spriteScaleX*frame[2],

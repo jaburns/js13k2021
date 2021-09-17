@@ -293,38 +293,38 @@ export let renderState = (curLevel: number, saveState: number[], state: GameStat
         c.fillText('RIDER', 21*155, 21*23);
 
         c.font = '84px Arial';
-        c.fillText('Use Arrows and Enter to Select Level', 21*155, 21*72);
+        //c.fillText('Use Arrows and Enter to Select Level', 21*155, 21*72);
 
         c.restore();
 
-        for( let i = 0; i < 18; ++i ) {
-            c.save();
-            c.translate(
-                k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
-                k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
-            );
-            c.scale(state.cameraZoom, state.cameraZoom);
+        //for( let i = 0; i < 18; ++i ) {
+        //    c.save();
+        //    c.translate(
+        //        k_fullWidth/2 - state.cameraPos[0] * k_baseScale * state.cameraZoom,
+        //        k_fullHeight/2 - state.cameraPos[1] * k_baseScale * state.cameraZoom
+        //    );
+        //    c.scale(state.cameraZoom, state.cameraZoom);
 
-            c.fillStyle = c.strokeStyle = i==state.selectedLevel ? '#00f' : i > saveState.length ? '#003' : '#007';
+        //    c.fillStyle = c.strokeStyle = i==state.selectedLevel ? '#00f' : i > saveState.length ? '#003' : '#007';
 
-            c.lineWidth = 21*(i==state.selectedLevel ? 1 : .25);
-            let col = i % 6;
-            let row = (i / 6) | 0;
-            let x = 115+col*14;
-            let y = 33+row*10;
-            c.strokeRect(21*x, 21*y, 21*12, 21*8);
+        //    c.lineWidth = 21*(i==state.selectedLevel ? 1 : .25);
+        //    let col = i % 6;
+        //    let row = (i / 6) | 0;
+        //    let x = 115+col*14;
+        //    let y = 33+row*10;
+        //    c.strokeRect(21*x, 21*y, 21*12, 21*8);
 
-            c.font = (i==state.selectedLevel ? 'bold ' : '')+'63px Courier';
-            c.textAlign = 'center';
-            c.fillText(i as any + 1, 21*(x+6), 21*(y+3));
-            c.font = 'bold 53px Courier';
+        //    c.font = (i==state.selectedLevel ? 'bold ' : '')+'63px Courier';
+        //    c.textAlign = 'center';
+        //    c.fillText(i as any + 1, 21*(x+6), 21*(y+3));
+        //    c.font = 'bold 53px Courier';
 
-            if( i < saveState.length ) {
-                c.fillText(ticksToTime(saveState[i]), 21*(x+6), 21*(y+7));
-            }
+        //    if( i < saveState.length ) {
+        //        c.fillText(ticksToTime(saveState[i]), 21*(x+6), 21*(y+7));
+        //    }
 
-            c.restore();
-        }
+        //    c.restore();
+        //}
     } else {
         c.save();
         c.fillStyle = '#f00';

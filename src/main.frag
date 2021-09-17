@@ -139,30 +139,30 @@ void main() {
 
         // ----- Background+world color ---------------
 
-        if( world.w != 0.0 ) {
-
-            float edge = pow(max(0.,1.+.5*world.z),3.);
-            if( world.w < 0.0 ) {
-                color = -world.w * (.1+.25*edge) * vec3(.5);
-            } else {
-                vec2 v = vec2(.3,0.);
-                vec2 p = edge > .01 ? worldPosBg + 20.*world.xy*edge : worldPosBg;
-                color = 
-                    .25 * sampleBackground0(p + v.xy) +
-                    .25 * sampleBackground0(p - v.xy) +
-                    .25 * sampleBackground0(p + v.yx) +
-                    .25 * sampleBackground0(p - v.yx);
-
-                vec2 p1 = edge > .01
-                    ? .05*worldPos + .2*vec2(world.y,-world.x)*edge
-                    : .05*worldPos;
-
-                float stripe = fract(2.*(sin(p1.x)+p1.y));
-
-                vec3 baseColor = (.5+.5*smoothstep(.2,.3,stripe)*smoothstep(.8,.7,stripe))*r.rgb;
-                color += world.w * (.1+.5*edge)*baseColor;
-            }
-        } else {
+//        if( world.w != 0.0 ) {
+//            float edge = pow(max(0.,1.+.5*world.z),3.);
+//            if( world.w < 0.0 ) {
+//                color = -world.w * (.1+.25*edge) * vec3(.5);
+//            } else {
+//                vec2 v = vec2(.3,0.);
+//                vec2 p = edge > .01 ? worldPosBg + 20.*world.xy*edge : worldPosBg;
+//                color = 
+//                    .25 * sampleBackground0(p + v.xy) +
+//                    .25 * sampleBackground0(p - v.xy) +
+//                    .25 * sampleBackground0(p + v.yx) +
+//                    .25 * sampleBackground0(p - v.yx);
+//
+//                vec2 p1 = edge > .01
+//                    ? .05*worldPos + .2*vec2(world.y,-world.x)*edge
+//                    : .05*worldPos;
+//
+//                float stripe = fract(2.*(sin(p1.x)+p1.y));
+//
+//                vec3 baseColor = (.5+.5*smoothstep(.2,.3,stripe)*smoothstep(.8,.7,stripe))*r.rgb;
+//                color += world.w * (.1+.5*edge)*baseColor;
+//            }
+//        } else {
+        {
             color = sampleBackground0(worldPosBg);
         }
 
@@ -189,7 +189,9 @@ void main() {
         // ----- Player color ---------------
 
         float playerAmount = playerCanvasSample.r;
-        color += vec3(playerAmount) + vec3(1,1,.5) * pow(.5*max(0.,2.-length(worldPos - s.xy)),2.75+.25*sin(.3*t.w));
+        vec3 doge = vec3(playerAmount) + vec3(1,1,.5) * pow(.5*max(0.,2.-length(vec2(.08,.05)*(worldPos - vec2(155,42)))),2.75+.25*sin(.3*t.w));
+        float ddoge = clamp(length(doge),0.,1.);
+        color = mix(color,doge,ddoge);
 
         // ----- Text color ---------------
 
