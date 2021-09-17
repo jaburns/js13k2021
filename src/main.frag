@@ -189,9 +189,10 @@ void main() {
         // ----- Player color ---------------
 
         float playerAmount = playerCanvasSample.r;
-        vec3 doge = vec3(playerAmount) + vec3(1,1,.5) * pow(.5*max(0.,2.-length(vec2(.08,.05)*(worldPos - vec2(155,42)))),2.75+.25*sin(.3*t.w));
+        vec3 doge = vec3(playerAmount);
         float ddoge = clamp(length(doge),0.,1.);
         color = mix(color,doge,ddoge);
+        color += 2.* (vec3(1,1,.5) * pow(.5*max(0.,2.-length(vec2(.08,.05)*(worldPos - vec2(155,37)))),2.8));
 
         // ----- Text color ---------------
 
